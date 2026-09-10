@@ -15,6 +15,21 @@
 			if (copiadoId === id) copiadoId = null;
 		}, 1500);
 	}
+
+	// null = no se pudo cruzar con Cloud Monitoring (el listado sigue vivo
+	// igual, solo sin esta info). undefined = sí se cruzó pero este processor_id
+	// no tiene ni un solo evento en la ventana: nunca se ha invocado.
+	function usoDe(id: string) {
+		if (!data.uso) return null;
+		const entry = data.uso[id];
+		if (!entry || (entry.ok === 0 && entry.error === 0)) {
+			return { texto: 'sin uso', clase: 'sin-uso' };
+		}
+		if (entry.ok > 0) {
+			return { texto: `${entry.ok} procesados`, clase: 'usado' };
+		}
+		return { texto: `solo errores (${entry.error})`, clase: 'solo-error' };
+	}
 </script>
 
 <div class="procesadores">
@@ -24,6 +39,17 @@
 			<span class="total">{data.total} vivos</span>
 		{/if}
 	</header>
+
+	{#if !data.error}
+		{#if data.usoError}
+			<p class="nota-uso nota-uso-error">Uso no disponible: {data.usoError}</p>
+		{:else if data.ventanaDias}
+			<p class="nota-uso">
+				Uso: acumulado de Cloud Monitoring de los últimos {Math.round(data.ventanaDias / 30)} meses
+				(el máximo que permite consultar).
+			</p>
+		{/if}
+	{/if}
 
 	{#if data.error}
 		<p class="error">{data.error}</p>
@@ -35,6 +61,7 @@
 				<h2>{grupo.titulo}</h2>
 				<ul>
 					{#each grupo.procesadores as p (p.name)}
+						{@const uso = usoDe(p.id)}
 						<li class="fila">
 							<div class="fila-principal">
 								<span class="display-name">{p.displayName}</span>
@@ -42,6 +69,9 @@
 									<span class="version">v{p.version}</span>
 								{/if}
 								<span class="estado" class:enabled={p.state === 'ENABLED'}>{p.state}</span>
+								{#if uso}
+									<span class="uso {uso.clase}">{uso.texto}</span>
+								{/if}
 							</div>
 							<div class="fila-meta">
 								<code class="id-corto">{p.id}</code>
@@ -96,6 +126,39 @@
 
 	.vacio {
 		color: #6b7280;
+	}
+
+	.nota-uso {
+		font-size: 0.78rem;
+		color: #6b7280;
+		margin: -0.75rem 0 1.25rem;
+	}
+
+	.nota-uso-error {
+		color: #92400e;
+	}
+
+	.uso {
+		font-size: 0.72rem;
+		font-weight: 600;
+		border-radius: 6px;
+		padding: 0.05rem 0.4rem;
+		white-space: nowrap;
+	}
+
+	.uso.usado {
+		color: #15803d;
+		background: rgba(21, 128, 61, 0.1);
+	}
+
+	.uso.solo-error {
+		color: #b45309;
+		background: rgba(180, 83, 9, 0.1);
+	}
+
+	.uso.sin-uso {
+		color: #9ca3af;
+		background: rgba(107, 114, 128, 0.06);
 	}
 
 	.grupo {

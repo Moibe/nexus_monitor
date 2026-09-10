@@ -24,5 +24,9 @@ export function describirError(e: unknown): string {
 		return 'La credencial no tiene permiso sobre este proyecto de Document AI.';
 	if (e instanceof Error && e.message.startsWith('Document AI 4'))
 		return 'Document AI rechazó la petición. Revisa el proyecto y la location.';
-	return 'No se pudo obtener la lista de procesadores.';
+	if (e instanceof Error && e.message.startsWith('Cloud Monitoring 403'))
+		return 'La credencial no tiene permiso de Monitoring sobre este proyecto.';
+	if (e instanceof Error && e.message.startsWith('Cloud Monitoring 4'))
+		return 'Cloud Monitoring rechazó la petición de uso.';
+	return 'No se pudo completar la operación contra Document AI o Cloud Monitoring.';
 }
