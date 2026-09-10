@@ -50,21 +50,6 @@
     onmousemove={handleMove}
     onmouseleave={handleLeave}
   >
-    <nav>
-      <a href="/" class="nav-item" aria-current="page">
-        <span class="nav-ico" aria-hidden="true"></span>
-        <span>Sección uno</span>
-      </a>
-      <a href="/" class="nav-item">
-        <span class="nav-ico" aria-hidden="true"></span>
-        <span>Sección dos</span>
-      </a>
-      <a href="/" class="nav-item">
-        <span class="nav-ico" aria-hidden="true"></span>
-        <span>Sección tres</span>
-      </a>
-    </nav>
-
     <div class="sidebar-footer">
       <button
         type="button"
@@ -132,61 +117,6 @@
     transition: transform 0.18s ease-out;
     will-change: transform;
     user-select: none;
-  }
-
-  nav {
-    display: flex;
-    flex-direction: column;
-    gap: 0.4rem;
-    flex: 1;
-    min-height: 0;
-    overflow-y: auto;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-  }
-
-  nav::-webkit-scrollbar {
-    display: none;
-  }
-
-  .nav-item {
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
-    padding: 0.7rem 0.95rem;
-    color: #374151;
-    text-decoration: none;
-    font-size: 0.95rem;
-    letter-spacing: 0.01em;
-    border-radius: 8px;
-    border: 1px solid transparent;
-    transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
-  }
-
-  .nav-ico {
-    width: 16px;
-    height: 16px;
-    border-radius: 5px;
-    flex-shrink: 0;
-    background: rgba(37, 99, 235, 0.25);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3);
-  }
-
-  .nav-item:hover {
-    background: rgba(37, 99, 235, 0.07);
-    border-color: rgba(37, 99, 235, 0.16);
-    color: #1f2937;
-  }
-
-  .nav-item[aria-current='page'] {
-    color: #1d4ed8;
-    background: rgba(37, 99, 235, 0.1);
-    border-color: rgba(37, 99, 235, 0.3);
-    font-weight: 600;
-  }
-
-  .nav-item[aria-current='page'] .nav-ico {
-    background: #2563eb;
   }
 
   .sidebar-footer {

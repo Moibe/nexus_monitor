@@ -34,7 +34,6 @@
 
   <nav>
     <a href="/" class="nav-item" aria-current="page">Inicio</a>
-    <a href="/" class="nav-item">Sección</a>
   </nav>
 
   <div class="spacer"></div>
