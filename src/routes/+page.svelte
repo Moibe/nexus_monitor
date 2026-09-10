@@ -193,8 +193,6 @@
 <style>
 	.procesadores {
 		padding: 1.5rem 0.5rem 2.5rem;
-		max-width: 860px;
-		margin: 0 auto;
 	}
 
 	.cabecera {
