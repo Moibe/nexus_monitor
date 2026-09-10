@@ -139,35 +139,54 @@
 	{:else if gruposVista.length === 0}
 		<p class="vacio">Ningún procesador coincide con el filtro.</p>
 	{:else}
-		{#each gruposVista as grupo (grupo.titulo)}
-			<section class="grupo">
-				<h2>{grupo.titulo}</h2>
-				<ul>
-					{#each grupo.procesadores as p (p.name)}
-						{@const uso = usoDe(p.id)}
-						<li class="fila">
-							<div class="fila-principal">
-								<span class="display-name">{p.displayName}</span>
-								{#if p.version !== null}
-									<span class="version">v{p.version}</span>
-								{/if}
-								<span class="estado" class:enabled={p.state === 'ENABLED'}>{p.state}</span>
-								{#if uso}
-									<span class="uso {uso.clase}">{uso.texto}</span>
-								{/if}
-							</div>
-							<div class="fila-meta">
-								<code class="id-corto">{p.id}</code>
-								<button type="button" class="copiar" onclick={() => copiarId(p.id)}>
-									{copiadoId === p.id ? 'Copiado' : 'Copiar id'}
-								</button>
-								<span class="fecha">{formatFecha(p.createTime)}</span>
-							</div>
-						</li>
+		<div class="tabla-wrap">
+			<table class="tabla-procesadores">
+				<thead>
+					<tr>
+						<th class="col-nombre">Nombre</th>
+						<th>Versión</th>
+						<th>Estado</th>
+						<th>Uso</th>
+						<th>ID</th>
+						<th>Creado</th>
+						<th class="col-accion"><span class="sr-only">Acción</span></th>
+					</tr>
+				</thead>
+				<tbody>
+					{#each gruposVista as grupo (grupo.titulo)}
+						<tr class="fila-grupo">
+							<th colspan="7">{grupo.titulo}</th>
+						</tr>
+						{#each grupo.procesadores as p (p.name)}
+							{@const uso = usoDe(p.id)}
+							<tr class="fila">
+								<td class="col-nombre">{p.displayName}</td>
+								<td>
+									{#if p.version !== null}
+										<span class="version">v{p.version}</span>
+									{/if}
+								</td>
+								<td>
+									<span class="estado" class:enabled={p.state === 'ENABLED'}>{p.state}</span>
+								</td>
+								<td>
+									{#if uso}
+										<span class="uso {uso.clase}">{uso.texto}</span>
+									{/if}
+								</td>
+								<td><code class="id-corto">{p.id}</code></td>
+								<td>{formatFecha(p.createTime)}</td>
+								<td class="col-accion">
+									<button type="button" class="copiar" onclick={() => copiarId(p.id)}>
+										{copiadoId === p.id ? 'Copiado' : 'Copiar id'}
+									</button>
+								</td>
+							</tr>
+						{/each}
 					{/each}
-				</ul>
-			</section>
-		{/each}
+				</tbody>
+			</table>
+		</div>
 	{/if}
 </div>
 
@@ -307,54 +326,82 @@
 		cursor: pointer;
 	}
 
-	.grupo {
-		margin-bottom: 1.75rem;
+	.tabla-wrap {
+		/* Única zona que puede crecer más ancha que el contenedor: en pantallas
+		   angostas la tabla scrollea horizontal en vez de aplastar columnas. */
+		overflow-x: auto;
 	}
 
-	.grupo h2 {
+	.tabla-procesadores {
+		width: 100%;
+		border-collapse: separate;
+		border-spacing: 0 0.3rem;
+		font-size: 0.86rem;
+	}
+
+	.tabla-procesadores thead th {
+		text-align: left;
+		font-size: 0.72rem;
+		font-weight: 600;
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+		color: #9ca3af;
+		padding: 0 0.8rem 0.5rem;
+		white-space: nowrap;
+	}
+
+	.fila-grupo th {
+		text-align: left;
 		font-size: 0.95rem;
 		font-weight: 600;
 		color: #374151;
 		text-transform: lowercase;
-		margin: 0 0 0.6rem;
-		padding-bottom: 0.35rem;
+		padding: 0.9rem 0.4rem 0.4rem;
 		border-bottom: 1px solid rgba(17, 24, 39, 0.08);
 	}
 
-	ul {
-		list-style: none;
-		margin: 0;
-		padding: 0;
-		display: flex;
-		flex-direction: column;
-		gap: 0.4rem;
+	.fila-grupo:first-child th {
+		padding-top: 0.2rem;
 	}
 
-	.fila {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		justify-content: space-between;
-		gap: 0.5rem 1rem;
+	.fila td {
 		padding: 0.55rem 0.8rem;
-		border-radius: 10px;
-		border: 1px solid rgba(17, 24, 39, 0.06);
+		border-top: 1px solid rgba(17, 24, 39, 0.06);
+		border-bottom: 1px solid rgba(17, 24, 39, 0.06);
 		background: rgba(17, 24, 39, 0.015);
-	}
-
-	.fila-principal {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		min-width: 0;
-	}
-
-	.display-name {
-		font-size: 0.92rem;
-		color: #1f2937;
 		white-space: nowrap;
+		vertical-align: middle;
+	}
+
+	.fila td:first-child {
+		border-left: 1px solid rgba(17, 24, 39, 0.06);
+		border-top-left-radius: 10px;
+		border-bottom-left-radius: 10px;
+	}
+
+	.fila td:last-child {
+		border-right: 1px solid rgba(17, 24, 39, 0.06);
+		border-top-right-radius: 10px;
+		border-bottom-right-radius: 10px;
+	}
+
+	.col-nombre {
+		width: 100%;
+		white-space: normal;
+		color: #1f2937;
+	}
+
+	.col-accion {
+		text-align: right;
+	}
+
+	.sr-only {
+		position: absolute;
+		width: 1px;
+		height: 1px;
 		overflow: hidden;
-		text-overflow: ellipsis;
+		clip: rect(0 0 0 0);
+		white-space: nowrap;
 	}
 
 	.version {
@@ -381,14 +428,6 @@
 		background: rgba(21, 128, 61, 0.1);
 	}
 
-	.fila-meta {
-		display: flex;
-		align-items: center;
-		gap: 0.6rem;
-		font-size: 0.78rem;
-		color: #6b7280;
-	}
-
 	.id-corto {
 		font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
 		background: rgba(17, 24, 39, 0.05);
@@ -410,9 +449,5 @@
 
 	.copiar:hover {
 		background: rgba(37, 99, 235, 0.15);
-	}
-
-	.fecha {
-		white-space: nowrap;
 	}
 </style>
