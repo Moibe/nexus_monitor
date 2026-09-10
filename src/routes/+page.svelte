@@ -1,7 +1,9 @@
 <script lang="ts">
+	import { invalidateAll } from '$app/navigation';
 	import type { PageData } from './$types';
 	import { formatFecha, type ProcesadorParseado } from '$lib/procesadores';
 	import { copiarTexto } from '$lib/copiar';
+	import ModalConfirmarEliminar from '$lib/ModalConfirmarEliminar.svelte';
 
 	let { data }: { data: PageData } = $props();
 
@@ -14,6 +16,42 @@
 		setTimeout(() => {
 			if (copiadoId === id) copiadoId = null;
 		}, 1500);
+	}
+
+	let procesadorAEliminar = $state<{ id: string; displayName: string } | null>(null);
+	let eliminando = $state(false);
+	let errorEliminar = $state<string | null>(null);
+
+	function pedirEliminar(p: ProcesadorParseado) {
+		procesadorAEliminar = { id: p.id, displayName: p.displayName };
+		errorEliminar = null;
+	}
+
+	function cancelarEliminar() {
+		procesadorAEliminar = null;
+		errorEliminar = null;
+	}
+
+	async function confirmarEliminar() {
+		if (!procesadorAEliminar) return;
+		eliminando = true;
+		errorEliminar = null;
+		try {
+			const r = await fetch(`/api/procesadores/${procesadorAEliminar.id}`, { method: 'DELETE' });
+			if (!r.ok) {
+				const cuerpo = await r.json().catch(() => null);
+				errorEliminar = cuerpo?.message ?? `Error ${r.status} al eliminar.`;
+				return;
+			}
+			procesadorAEliminar = null;
+			// Vuelve a pedir la lista (y el uso) al server en vez de solo quitar la
+			// fila local: Document AI encola el borrado como una long-running
+			// operation, así que lo honesto es reflejar lo que el server diga que
+			// hay ahora (probablemente el procesador en state DELETING).
+			await invalidateAll();
+		} finally {
+			eliminando = false;
+		}
 	}
 
 	type ClaseUso = 'usado' | 'sin-uso' | 'solo-error';
@@ -247,6 +285,14 @@
 			</table>
 		</div>
 	{/if}
+
+	<ModalConfirmarEliminar
+		procesador={procesadorAEliminar}
+		{eliminando}
+		error={errorEliminar}
+		onConfirmar={confirmarEliminar}
+		onCancelar={cancelarEliminar}
+	/>
 </div>
 
 {#snippet filaProcesador(p: ProcesadorParseado, grupoTitulo: string | null)}
@@ -276,6 +322,21 @@
 		<td class="col-accion">
 			<button type="button" class="copiar" onclick={() => copiarId(p.id)}>
 				{copiadoId === p.id ? 'Copiado' : 'Copiar id'}
+			</button>
+			<button
+				type="button"
+				class="borrar"
+				onclick={() => pedirEliminar(p)}
+				aria-label={`Eliminar ${p.displayName}`}
+				title="Eliminar procesador"
+			>
+				<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+					<path d="M3 6h18" />
+					<path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+					<path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+					<path d="M10 11v6" />
+					<path d="M14 11v6" />
+				</svg>
 			</button>
 		</td>
 	</tr>
@@ -513,8 +574,11 @@
 		color: #1f2937;
 	}
 
-	.col-accion {
-		text-align: right;
+	td.col-accion {
+		display: flex;
+		align-items: center;
+		justify-content: flex-end;
+		gap: 0.4rem;
 	}
 
 	.sr-only {
@@ -571,5 +635,24 @@
 
 	.copiar:hover {
 		background: rgba(37, 99, 235, 0.15);
+	}
+
+	.borrar {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		color: #b45309;
+		background: rgba(180, 83, 9, 0.08);
+		border: 1px solid rgba(180, 83, 9, 0.2);
+		border-radius: 6px;
+		padding: 0.3rem;
+		cursor: pointer;
+		transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+	}
+
+	.borrar:hover {
+		color: #ffffff;
+		background: #b91c1c;
+		border-color: #b91c1c;
 	}
 </style>

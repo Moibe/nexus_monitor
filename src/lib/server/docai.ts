@@ -67,3 +67,30 @@ export async function listarProcesadores(): Promise<Procesador[]> {
 
 	return todos;
 }
+
+/**
+ * Borra un procesador. IRREVERSIBLE: se lleva el dataset y el esquema del
+ * procesador con él. El nombre completo se arma AQUÍ, del lado del server,
+ * con nuestro propio PROJECT/LOCATION — nunca a partir de un `name` que
+ * mande el cliente, para que una request manipulada no pueda apuntar a un
+ * proyecto o location distinto del que esta instancia tiene configurado.
+ */
+export async function eliminarProcesador(id: string): Promise<void> {
+	if (!PROJECT) throw new Error('Falta DOCAI_PROJECT_ID: cópialo del .env de nexus_back.');
+
+	const token = await auth.getAccessToken();
+	const url = `https://${LOCATION}-documentai.googleapis.com/v1/projects/${PROJECT}/locations/${LOCATION}/processors/${id}`;
+
+	const r = await fetch(url, {
+		method: 'DELETE',
+		headers: { Authorization: `Bearer ${token}` },
+		signal: AbortSignal.timeout(30_000)
+	});
+	if (!r.ok) {
+		throw new Error(`Document AI ${r.status}: ${(await r.text()).slice(0, 300)}`);
+	}
+	// La respuesta es una long-running operation: Document AI encola el
+	// borrado, no lo ejecuta al instante. El procesador pasa a state
+	// `DELETING` hasta que termina — por eso no hay nada que parsear ni que
+	// esperar aquí, el listado siguiente ya lo reflejará.
+}

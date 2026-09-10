@@ -22,6 +22,12 @@ export function describirError(e: unknown): string {
 		return e.message;
 	if (e instanceof Error && e.message.startsWith('Document AI 403'))
 		return 'La credencial no tiene permiso sobre este proyecto de Document AI.';
+	// Estas dos son específicas de borrar, y tienen que ir ANTES del catch-all
+	// 'Document AI 4' de abajo (404 y 409 también empiezan con 'Document AI 4').
+	if (e instanceof Error && e.message.startsWith('Document AI 404'))
+		return 'Ese procesador ya no existe (puede que alguien más ya lo haya borrado).';
+	if (e instanceof Error && e.message.startsWith('Document AI 409'))
+		return 'El procesador está en medio de otra operación; intenta de nuevo en un momento.';
 	if (e instanceof Error && e.message.startsWith('Document AI 4'))
 		return 'Document AI rechazó la petición. Revisa el proyecto y la location.';
 	if (e instanceof Error && e.message.startsWith('Cloud Monitoring 403'))
