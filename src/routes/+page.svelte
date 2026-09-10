@@ -16,20 +16,76 @@
 		}, 1500);
 	}
 
-	// null = no se pudo cruzar con Cloud Monitoring (el listado sigue vivo
-	// igual, solo sin esta info). undefined = sí se cruzó pero este processor_id
-	// no tiene ni un solo evento en la ventana: nunca se ha invocado.
+	type ClaseUso = 'usado' | 'sin-uso' | 'solo-error';
+
+	// null (sin cruce disponible) se maneja aparte en cada llamador: esta
+	// función solo corre cuando data.uso ya existe.
+	function claseUso(id: string): ClaseUso {
+		const entry = data.uso?.[id];
+		if (!entry || (entry.ok === 0 && entry.error === 0)) return 'sin-uso';
+		if (entry.ok > 0) return 'usado';
+		return 'solo-error';
+	}
+
 	function usoDe(id: string) {
 		if (!data.uso) return null;
 		const entry = data.uso[id];
-		if (!entry || (entry.ok === 0 && entry.error === 0)) {
-			return { texto: 'sin uso', clase: 'sin-uso' };
-		}
-		if (entry.ok > 0) {
-			return { texto: `${entry.ok} procesados`, clase: 'usado' };
-		}
-		return { texto: `solo errores (${entry.error})`, clase: 'solo-error' };
+		const clase = claseUso(id);
+		if (clase === 'usado') return { texto: `${entry!.ok} procesados`, clase };
+		if (clase === 'solo-error') return { texto: `solo errores (${entry!.error})`, clase };
+		return { texto: 'sin uso', clase };
 	}
+
+	const OPCIONES_FILTRO: { valor: 'todos' | ClaseUso; etiqueta: string }[] = [
+		{ valor: 'todos', etiqueta: 'Todos' },
+		{ valor: 'usado', etiqueta: 'Con uso' },
+		{ valor: 'solo-error', etiqueta: 'Solo errores' },
+		{ valor: 'sin-uso', etiqueta: 'Sin uso' }
+	];
+
+	let filtro = $state<'todos' | ClaseUso>('todos');
+	let orden = $state<'alfabetico' | 'mas-usados' | 'menos-usados'>('alfabetico');
+
+	// Cuenta cuántos procesadores (no grupos) caen en cada clase, para
+	// mostrarlo junto a cada botón de filtro. Contra el arreglo completo,
+	// sin filtrar todavía — así el número no cambia cuando cambias de filtro.
+	let conteoPorClase = $derived.by(() => {
+		const c: Record<'todos' | ClaseUso, number> = {
+			todos: 0,
+			usado: 0,
+			'sin-uso': 0,
+			'solo-error': 0
+		};
+		if (!data.uso) return c;
+		for (const g of data.grupos) {
+			for (const p of g.procesadores) {
+				c.todos++;
+				c[claseUso(p.id)]++;
+			}
+		}
+		return c;
+	});
+
+	// Filtra por fila (procesador) y ordena por grupo. El orden interno de
+	// cada grupo (versión descendente) se respeta siempre — "más/menos
+	// usados" reordena los GRUPOS por su total, no las filas adentro.
+	let gruposVista = $derived.by(() => {
+		if (!data.uso) return data.grupos;
+
+		let grupos = data.grupos
+			.map((g) => {
+				const procesadores =
+					filtro === 'todos' ? g.procesadores : g.procesadores.filter((p) => claseUso(p.id) === filtro);
+				const totalOk = g.procesadores.reduce((s, p) => s + (data.uso?.[p.id]?.ok ?? 0), 0);
+				return { ...g, procesadores, totalOk };
+			})
+			.filter((g) => g.procesadores.length > 0);
+
+		if (orden === 'mas-usados') grupos = [...grupos].sort((a, b) => b.totalOk - a.totalOk);
+		else if (orden === 'menos-usados') grupos = [...grupos].sort((a, b) => a.totalOk - b.totalOk);
+
+		return grupos;
+	});
 </script>
 
 <div class="procesadores">
@@ -51,12 +107,39 @@
 		{/if}
 	{/if}
 
+	{#if data.uso && data.grupos.length > 0}
+		<div class="controles">
+			<div class="filtros" role="group" aria-label="Filtrar por uso">
+				{#each OPCIONES_FILTRO as opcion}
+					<button
+						type="button"
+						class="filtro-btn"
+						class:activo={filtro === opcion.valor}
+						onclick={() => (filtro = opcion.valor)}
+					>
+						{opcion.etiqueta} ({conteoPorClase[opcion.valor]})
+					</button>
+				{/each}
+			</div>
+			<label class="orden-label">
+				Orden
+				<select bind:value={orden}>
+					<option value="alfabetico">Alfabético</option>
+					<option value="mas-usados">Más usados primero</option>
+					<option value="menos-usados">Menos usados primero</option>
+				</select>
+			</label>
+		</div>
+	{/if}
+
 	{#if data.error}
 		<p class="error">{data.error}</p>
 	{:else if data.grupos.length === 0}
 		<p class="vacio">No hay procesadores.</p>
+	{:else if gruposVista.length === 0}
+		<p class="vacio">Ningún procesador coincide con el filtro.</p>
 	{:else}
-		{#each data.grupos as grupo (grupo.titulo)}
+		{#each gruposVista as grupo (grupo.titulo)}
 			<section class="grupo">
 				<h2>{grupo.titulo}</h2>
 				<ul>
@@ -159,6 +242,69 @@
 	.uso.sin-uso {
 		color: #9ca3af;
 		background: rgba(107, 114, 128, 0.06);
+	}
+
+	.controles {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.6rem;
+		margin-bottom: 1.5rem;
+		padding-bottom: 1rem;
+		border-bottom: 1px solid rgba(17, 24, 39, 0.08);
+	}
+
+	.filtros {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.4rem;
+	}
+
+	.filtro-btn {
+		font: inherit;
+		font-size: 0.78rem;
+		color: #374151;
+		background: rgba(17, 24, 39, 0.03);
+		border: 1px solid rgba(17, 24, 39, 0.1);
+		border-radius: 999px;
+		padding: 0.3rem 0.75rem;
+		cursor: pointer;
+		transition:
+			background 0.15s ease,
+			border-color 0.15s ease,
+			color 0.15s ease;
+	}
+
+	.filtro-btn:hover {
+		background: rgba(37, 99, 235, 0.08);
+		border-color: rgba(37, 99, 235, 0.2);
+	}
+
+	.filtro-btn.activo {
+		color: #1d4ed8;
+		background: rgba(37, 99, 235, 0.12);
+		border-color: rgba(37, 99, 235, 0.35);
+		font-weight: 600;
+	}
+
+	.orden-label {
+		display: flex;
+		align-items: center;
+		gap: 0.4rem;
+		font-size: 0.78rem;
+		color: #6b7280;
+	}
+
+	.orden-label select {
+		font: inherit;
+		font-size: 0.78rem;
+		color: #1f2937;
+		background: rgba(17, 24, 39, 0.03);
+		border: 1px solid rgba(17, 24, 39, 0.1);
+		border-radius: 8px;
+		padding: 0.3rem 0.5rem;
+		cursor: pointer;
 	}
 
 	.grupo {
