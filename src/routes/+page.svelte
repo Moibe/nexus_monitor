@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { PageData } from './$types';
-	import { formatFecha } from '$lib/procesadores';
+	import { formatFecha, type ProcesadorParseado } from '$lib/procesadores';
 	import { copiarTexto } from '$lib/copiar';
 
 	let { data }: { data: PageData } = $props();
@@ -86,6 +86,68 @@
 
 		return grupos;
 	});
+
+	type ColumnaOrden = 'nombre' | 'version' | 'estado' | 'uso' | 'id' | 'creado';
+
+	const COLUMNAS: { valor: ColumnaOrden; etiqueta: string }[] = [
+		{ valor: 'nombre', etiqueta: 'Nombre' },
+		{ valor: 'version', etiqueta: 'Versión' },
+		{ valor: 'estado', etiqueta: 'Estado' },
+		{ valor: 'uso', etiqueta: 'Uso' },
+		{ valor: 'id', etiqueta: 'ID' },
+		{ valor: 'creado', etiqueta: 'Creado' }
+	];
+
+	let columnaOrden = $state<ColumnaOrden | null>(null);
+	let direccionOrden = $state<'asc' | 'desc'>('asc');
+
+	// Ciclo de 3 clics: asc -> desc -> quita el orden y regresa a la vista
+	// agrupada por tipo (el orden por columna es plano; sin él, se agrupa).
+	function alHacerClicColumna(columna: ColumnaOrden) {
+		if (columnaOrden !== columna) {
+			columnaOrden = columna;
+			direccionOrden = 'asc';
+		} else if (direccionOrden === 'asc') {
+			direccionOrden = 'desc';
+		} else {
+			columnaOrden = null;
+		}
+	}
+
+	function valorColumna(p: ProcesadorParseado, columna: ColumnaOrden): string | number {
+		switch (columna) {
+			case 'nombre':
+				return p.displayName;
+			case 'version':
+				return p.version ?? -1;
+			case 'estado':
+				return p.state;
+			case 'uso':
+				return data.uso?.[p.id]?.ok ?? -1;
+			case 'id':
+				return p.id;
+			case 'creado':
+				return p.createTime;
+		}
+	}
+
+	// Aplana los grupos ya filtrados (gruposVista) en una sola lista, ordenada
+	// por la columna elegida. null = no hay orden por columna activo, se
+	// muestra la vista agrupada de siempre.
+	let filasOrdenadas = $derived.by(() => {
+		if (!columnaOrden) return null;
+
+		const columna = columnaOrden;
+		const factor = direccionOrden === 'asc' ? 1 : -1;
+		const filas = gruposVista.flatMap((g) => g.procesadores.map((p) => ({ ...p, grupoTitulo: g.titulo })));
+
+		return filas.sort((a, b) => {
+			const va = valorColumna(a, columna);
+			const vb = valorColumna(b, columna);
+			if (typeof va === 'number' && typeof vb === 'number') return (va - vb) * factor;
+			return String(va).localeCompare(String(vb), 'es') * factor;
+		});
+	});
 </script>
 
 <div class="procesadores">
@@ -121,14 +183,18 @@
 					</button>
 				{/each}
 			</div>
-			<label class="orden-label">
-				Orden
-				<select bind:value={orden}>
-					<option value="alfabetico">Alfabético</option>
-					<option value="mas-usados">Más usados primero</option>
-					<option value="menos-usados">Menos usados primero</option>
-				</select>
-			</label>
+			{#if !columnaOrden}
+				<label class="orden-label">
+					Orden de los grupos
+					<select bind:value={orden}>
+						<option value="alfabetico">Alfabético</option>
+						<option value="mas-usados">Más usados primero</option>
+						<option value="menos-usados">Menos usados primero</option>
+					</select>
+				</label>
+			{:else}
+				<p class="orden-label">Ordenado por columna — clic de nuevo en el encabezado para quitarlo.</p>
+			{/if}
 		</div>
 	{/if}
 
@@ -143,52 +209,77 @@
 			<table class="tabla-procesadores">
 				<thead>
 					<tr>
-						<th class="col-nombre">Nombre</th>
-						<th>Versión</th>
-						<th>Estado</th>
-						<th>Uso</th>
-						<th>ID</th>
-						<th>Creado</th>
+						{#each COLUMNAS as columna}
+							<th class={columna.valor === 'nombre' ? 'col-nombre' : ''}>
+								<button
+									type="button"
+									class="th-orden"
+									class:activo={columnaOrden === columna.valor}
+									onclick={() => alHacerClicColumna(columna.valor)}
+									title="Clic para ordenar; de nuevo invierte; una tercera vez quita el orden."
+								>
+									{columna.etiqueta}
+									{#if columnaOrden === columna.valor}
+										<span class="flecha">{direccionOrden === 'asc' ? '▲' : '▼'}</span>
+									{/if}
+								</button>
+							</th>
+						{/each}
 						<th class="col-accion"><span class="sr-only">Acción</span></th>
 					</tr>
 				</thead>
 				<tbody>
-					{#each gruposVista as grupo (grupo.titulo)}
-						<tr class="fila-grupo">
-							<th colspan="7">{grupo.titulo}</th>
-						</tr>
-						{#each grupo.procesadores as p (p.name)}
-							{@const uso = usoDe(p.id)}
-							<tr class="fila">
-								<td class="col-nombre">{p.displayName}</td>
-								<td>
-									{#if p.version !== null}
-										<span class="version">v{p.version}</span>
-									{/if}
-								</td>
-								<td>
-									<span class="estado" class:enabled={p.state === 'ENABLED'}>{p.state}</span>
-								</td>
-								<td>
-									{#if uso}
-										<span class="uso {uso.clase}">{uso.texto}</span>
-									{/if}
-								</td>
-								<td><code class="id-corto">{p.id}</code></td>
-								<td>{formatFecha(p.createTime)}</td>
-								<td class="col-accion">
-									<button type="button" class="copiar" onclick={() => copiarId(p.id)}>
-										{copiadoId === p.id ? 'Copiado' : 'Copiar id'}
-									</button>
-								</td>
-							</tr>
+					{#if columnaOrden && filasOrdenadas}
+						{#each filasOrdenadas as p (p.name)}
+							{@render filaProcesador(p, p.grupoTitulo)}
 						{/each}
-					{/each}
+					{:else}
+						{#each gruposVista as grupo (grupo.titulo)}
+							<tr class="fila-grupo">
+								<th colspan="7">{grupo.titulo}</th>
+							</tr>
+							{#each grupo.procesadores as p (p.name)}
+								{@render filaProcesador(p, null)}
+							{/each}
+						{/each}
+					{/if}
 				</tbody>
 			</table>
 		</div>
 	{/if}
 </div>
+
+{#snippet filaProcesador(p: ProcesadorParseado, grupoTitulo: string | null)}
+	{@const uso = usoDe(p.id)}
+	<tr class="fila">
+		<td class="col-nombre">
+			{p.displayName}
+			{#if grupoTitulo}
+				<span class="grupo-inline">{grupoTitulo}</span>
+			{/if}
+		</td>
+		<td>
+			{#if p.version !== null}
+				<span class="version">v{p.version}</span>
+			{/if}
+		</td>
+		<td>
+			<span class="estado" class:enabled={p.state === 'ENABLED'}>{p.state}</span>
+		</td>
+		<td>
+			{#if uso}
+				<span class="uso {uso.clase}">{uso.texto}</span>
+			{/if}
+		</td>
+		<td><code class="id-corto">{p.id}</code></td>
+		<td>{formatFecha(p.createTime)}</td>
+		<td class="col-accion">
+			<button type="button" class="copiar" onclick={() => copiarId(p.id)}>
+				{copiadoId === p.id ? 'Copiado' : 'Copiar id'}
+			</button>
+		</td>
+	</tr>
+{/snippet}
 
 <style>
 	.procesadores {
@@ -339,13 +430,46 @@
 
 	.tabla-procesadores thead th {
 		text-align: left;
+		padding: 0;
+		white-space: nowrap;
+	}
+
+	.th-orden {
+		font: inherit;
 		font-size: 0.72rem;
 		font-weight: 600;
 		letter-spacing: 0.04em;
 		text-transform: uppercase;
 		color: #9ca3af;
+		background: none;
+		border: none;
+		margin: 0;
 		padding: 0 0.8rem 0.5rem;
-		white-space: nowrap;
+		cursor: pointer;
+		display: inline-flex;
+		align-items: center;
+		gap: 0.3rem;
+		transition: color 0.15s ease;
+	}
+
+	.th-orden:hover {
+		color: #374151;
+	}
+
+	.th-orden.activo {
+		color: #1d4ed8;
+	}
+
+	.flecha {
+		font-size: 0.65rem;
+	}
+
+	.grupo-inline {
+		display: block;
+		font-size: 0.72rem;
+		font-weight: 400;
+		color: #9ca3af;
+		margin-top: 0.1rem;
 	}
 
 	.fila-grupo th {
