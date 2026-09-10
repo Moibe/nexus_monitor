@@ -569,7 +569,6 @@
 	}
 
 	.col-nombre {
-		width: 100%;
 		white-space: normal;
 		color: #1f2937;
 	}
