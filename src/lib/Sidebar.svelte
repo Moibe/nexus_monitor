@@ -1,7 +1,14 @@
 <script lang="ts">
+  import { page } from '$app/state';
+
   // Barra lateral "de vidrio" con el mismo tilt 3D que la superior. Incluye el
   // handle para replegar/mostrar. Publica su ancho real a la variable CSS
   // --sidebar-width para que el panel de contenido se ajuste solo.
+  //
+  // Las secciones de la app viven aquí. Cuando se agregue una nueva, basta con
+  // sumarla a este arreglo: el estado activo sale solo de la ruta.
+  const SECCIONES = [{ href: '/procesadores', etiqueta: 'Procesadores' }];
+
   let {
     collapsed = false,
     toggleCollapsed
@@ -50,6 +57,37 @@
     onmousemove={handleMove}
     onmouseleave={handleLeave}
   >
+    <nav>
+      {#each SECCIONES as seccion}
+        <a
+          href={seccion.href}
+          class="nav-item"
+          aria-current={page.url.pathname.startsWith(seccion.href) ? 'page' : undefined}
+        >
+          <span class="nav-ico" aria-hidden="true">
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M8 6h13" />
+              <path d="M8 12h13" />
+              <path d="M8 18h13" />
+              <path d="M3 6h.01" />
+              <path d="M3 12h.01" />
+              <path d="M3 18h.01" />
+            </svg>
+          </span>
+          <span>{seccion.etiqueta}</span>
+        </a>
+      {/each}
+    </nav>
+
     <div class="sidebar-footer">
       <button
         type="button"
@@ -117,6 +155,60 @@
     transition: transform 0.18s ease-out;
     will-change: transform;
     user-select: none;
+  }
+
+  nav {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.7rem 0.95rem;
+    color: #374151;
+    text-decoration: none;
+    font-size: 0.95rem;
+    letter-spacing: 0.01em;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+  }
+
+  .nav-ico {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: #9ca3af;
+  }
+
+  .nav-item:hover {
+    background: rgba(37, 99, 235, 0.07);
+    border-color: rgba(37, 99, 235, 0.16);
+    color: #1f2937;
+  }
+
+  .nav-item[aria-current='page'] {
+    color: #1d4ed8;
+    background: rgba(37, 99, 235, 0.1);
+    border-color: rgba(37, 99, 235, 0.3);
+    font-weight: 600;
+  }
+
+  .nav-item[aria-current='page'] .nav-ico {
+    color: #2563eb;
   }
 
   .sidebar-footer {

@@ -4,11 +4,10 @@
   import TopNav from '$lib/TopNav.svelte';
 
   let { children } = $props();
-  // Arranca replegada: hoy el sidebar no tiene ninguna sección real (se
-  // quitaron los placeholders), así que mostrarla expandida por default
-  // sería una caja blanca vacía. Con esto solo se ve el handle flotante,
-  // y se expande cuando de verdad haya algo que poner adentro.
-  let collapsed = $state(true);
+  // Arranca desplegada: ya hay una sección real (Procesadores) que mostrar.
+  // Estuvo en `true` mientras el sidebar no tenía contenido, para no enseñar
+  // una caja blanca vacía.
+  let collapsed = $state(false);
 
   // Usa View Transitions cuando el browser las soporta para animar el repliegue
   // de la barra; si no, hace el cambio directo.

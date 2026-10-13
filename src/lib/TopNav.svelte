@@ -46,10 +46,6 @@
     <span class="brand-title">Nexus Monitor</span>
   </a>
 
-  <nav>
-    <a href="/" class="nav-item" aria-current="page">Inicio</a>
-  </nav>
-
   <div class="spacer"></div>
 </header>
 
@@ -105,42 +101,6 @@
     font-size: 1.2rem;
     font-weight: 700;
     letter-spacing: 0.005em;
-  }
-
-  nav {
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-    margin-left: 1.25rem;
-    padding-left: 1.25rem;
-    border-left: 1px solid rgba(17, 24, 39, 0.1);
-    height: 60%;
-  }
-
-  .nav-item {
-    display: inline-flex;
-    align-items: center;
-    padding: 0.45rem 0.95rem;
-    color: #374151;
-    text-decoration: none;
-    font-size: 0.95rem;
-    letter-spacing: 0.01em;
-    border-radius: 8px;
-    border: 1px solid transparent;
-    transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
-  }
-
-  .nav-item:hover {
-    background: rgba(37, 99, 235, 0.07);
-    border-color: rgba(37, 99, 235, 0.16);
-    color: #1f2937;
-  }
-
-  .nav-item[aria-current='page'] {
-    color: #1d4ed8;
-    background: rgba(37, 99, 235, 0.1);
-    border-color: rgba(37, 99, 235, 0.3);
-    font-weight: 600;
   }
 
   .spacer {
