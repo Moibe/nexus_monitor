@@ -7,7 +7,23 @@
   //
   // Las secciones de la app viven aquí. Cuando se agregue una nueva, basta con
   // sumarla a este arreglo: el estado activo sale solo de la ruta.
-  const SECCIONES = [{ href: '/procesadores', etiqueta: 'Procesadores' }];
+  //
+  // `icono` son los `d` de un SVG de 24x24 trazado con currentColor, para
+  // seguir sin depender de ninguna librería de iconos (igual que el resto del
+  // chrome). Va por sección y no fijo en el markup, porque si no todas
+  // compartirían el mismo dibujo.
+  const SECCIONES = [
+    {
+      href: '/procesadores',
+      etiqueta: 'Procesadores',
+      icono: ['M8 6h13', 'M8 12h13', 'M8 18h13', 'M3 6h.01', 'M3 12h.01', 'M3 18h.01']
+    },
+    {
+      href: '/tablas',
+      etiqueta: 'Tablas',
+      icono: ['M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z', 'M3 9h18', 'M12 9v12']
+    }
+  ];
 
   let {
     collapsed = false,
@@ -75,12 +91,9 @@
               stroke-linecap="round"
               stroke-linejoin="round"
             >
-              <path d="M8 6h13" />
-              <path d="M8 12h13" />
-              <path d="M8 18h13" />
-              <path d="M3 6h.01" />
-              <path d="M3 12h.01" />
-              <path d="M3 18h.01" />
+              {#each seccion.icono as d}
+                <path {d} />
+              {/each}
             </svg>
           </span>
           <span>{seccion.etiqueta}</span>
