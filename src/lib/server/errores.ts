@@ -30,6 +30,16 @@ export function describirError(e: unknown): string {
 		return 'El procesador está en medio de otra operación; intenta de nuevo en un momento.';
 	if (e instanceof Error && e.message.startsWith('Document AI 4'))
 		return 'Document AI rechazó la petición. Revisa el proyecto y la location.';
+	if (e instanceof Error && e.message.startsWith('Falta NEXUS_API_'))
+		return e.message;
+	if (e instanceof Error && e.message.startsWith('nexus_back 401'))
+		return 'nexus_back rechazó la llave (NEXUS_API_KEY no coincide con la suya).';
+	if (e instanceof Error && e.message.startsWith('nexus_back 404'))
+		return 'Ese nexus_back no tiene /esquema/tablas: hoy solo existe en su rama dev (8084).';
+	if (e instanceof Error && e.message.startsWith('nexus_back 503'))
+		return 'nexus_back no pudo leer el catálogo de SQL Server.';
+	if (e instanceof Error && e.message.startsWith('nexus_back '))
+		return 'nexus_back no respondió bien al pedirle el inventario de tablas.';
 	if (e instanceof Error && e.message.startsWith('Cloud Monitoring 403'))
 		return 'La credencial no tiene permiso de Monitoring sobre este proyecto.';
 	if (e instanceof Error && e.message.startsWith('Cloud Monitoring 4'))

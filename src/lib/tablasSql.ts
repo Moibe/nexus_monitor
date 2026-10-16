@@ -142,6 +142,21 @@ export const ESQUEMAS: EsquemaSql[] = [
 	}
 ];
 
+// Índice por nombre de tabla, para ponerle contexto humano a lo que llega en
+// vivo del back. La base sabe qué tablas hay y cuántas filas tienen; lo que
+// NO sabe es para qué sirve cada una — eso sale de aquí.
+//
+// La búsqueda es por nombre de tabla y no por `esquema.tabla` a propósito: una
+// tabla "por definir" que mañana aparezca de verdad en `documents` debe
+// conservar su descripción sin que haya que tocar este archivo.
+const POR_NOMBRE = new Map<string, TablaSql>(
+	ESQUEMAS.flatMap((e) => e.tablas.map((t) => [t.nombre.toLowerCase(), t] as const))
+);
+
+export function descripcionDe(tabla: string): TablaSql | undefined {
+	return POR_NOMBRE.get(tabla.toLowerCase());
+}
+
 // Convenciones del DBA, útiles al leer cualquier tabla de arriba.
 export const CONVENCIONES = [
 	'Borrado lógico: `isActive` + `isDeleted`, nunca DELETE físico.',

@@ -1,5 +1,14 @@
 <script lang="ts">
-	import { ESQUEMAS, CONVENCIONES, LEIDO_EL, type EstadoTabla } from '$lib/tablasSql';
+	import {
+		ESQUEMAS,
+		CONVENCIONES,
+		LEIDO_EL,
+		descripcionDe,
+		type EstadoTabla
+	} from '$lib/tablasSql';
+	import type { PageData } from './$types';
+
+	let { data }: { data: PageData } = $props();
 
 	const ETIQUETA_ESTADO: Record<EstadoTabla, string> = {
 		'con-datos': 'con datos',
@@ -7,20 +16,59 @@
 		'no-existe': 'no existe aún'
 	};
 
-	const total = ESQUEMAS.reduce((s, e) => s + e.tablas.length, 0);
+	// Agrupa lo que llegó en vivo por esquema, poniéndole a cada tabla la
+	// descripción curada cuando la hay. Las que no la tengan salen igual: que
+	// aparezca una tabla que no conocíamos es justo lo que esto debe delatar.
+	let gruposVivos = $derived.by(() => {
+		if (!data.vivas) return null;
+		const porEsquema = new Map<string, { tabla: string; filas: number }[]>();
+		for (const t of data.vivas) {
+			const lista = porEsquema.get(t.esquema);
+			if (lista) lista.push({ tabla: t.tabla, filas: t.filas });
+			else porEsquema.set(t.esquema, [{ tabla: t.tabla, filas: t.filas }]);
+		}
+		return [...porEsquema.entries()]
+			.map(([esquema, tablas]) => ({
+				esquema,
+				tablas: [...tablas].sort((a, b) => a.tabla.localeCompare(b.tabla, 'es'))
+			}))
+			.sort((a, b) => a.esquema.localeCompare(b.esquema, 'es'));
+	});
+
+	// Las que seguimos esperando del DBA: curadas como "no existe aún" y que
+	// efectivamente no aparecieron en la lectura en vivo.
+	let pendientes = $derived.by(() => {
+		if (!data.vivas) return [];
+		const existen = new Set(data.vivas.map((t) => t.tabla.toLowerCase()));
+		return ESQUEMAS.flatMap((e) => e.tablas)
+			.filter((t) => t.estado === 'no-existe' && !existen.has(t.nombre.toLowerCase()));
+	});
+
+	const totalVivas = $derived(data.vivas?.length ?? 0);
 </script>
 
 <div class="tablas">
 	<header class="cabecera">
 		<h1>Tablas en SQL</h1>
-		<span class="total">{total} tablas</span>
+		{#if data.vivas}
+			<span class="total">{totalVivas} tablas</span>
+			<span class="en-vivo">en vivo</span>
+		{/if}
 	</header>
 
-	<p class="nota">
-		Referencia, no lectura en vivo: Monitor no se conecta a esa base. Es una foto tomada del
-		esquema el {LEIDO_EL}, según lo que el back dejó documentado como leído del catálogo (no
-		supuesto). La base la diseña y mantiene el DBA.
-	</p>
+	{#if data.vivas}
+		<p class="nota">
+			Leído de la base ahora mismo (<code>IA_Nexus</code>), vía nexus_back: Monitor no se conecta
+			a SQL Server, le pregunta al back, que es quien tiene las credenciales. Solo metadatos —
+			nombres y conteos — nunca datos de un cliente. Los conteos son los del motor: exactos para
+			un inventario, no para cuadrar cifras.
+		</p>
+	{:else}
+		<p class="nota nota-error">
+			No se pudo leer la base: {data.errorVivas} — abajo queda la foto del {LEIDO_EL}, que puede
+			haber envejecido.
+		</p>
+	{/if}
 
 	<div class="tabla-wrap">
 		<table class="tabla-esquema">
@@ -29,35 +77,74 @@
 					<th class="col-nombre">Tabla</th>
 					<th>Para qué</th>
 					<th>Columnas clave</th>
-					<th>Estado</th>
+					<th class="col-num">{data.vivas ? 'Filas' : 'Estado'}</th>
 				</tr>
 			</thead>
 			<tbody>
-				{#each ESQUEMAS as esquema (esquema.nombre)}
-					<tr class="fila-esquema">
-						<th colspan="4">
-							{esquema.nombre}
-							<span class="esquema-desc">{esquema.descripcion}</span>
-						</th>
-					</tr>
-					{#each esquema.tablas as tabla (esquema.nombre + tabla.nombre)}
-						<tr class="fila">
-							<td class="col-nombre">
-								<code>{tabla.nombre}</code>
-							</td>
-							<td class="col-proposito">
-								{tabla.proposito}
-								{#if tabla.nota}
-									<span class="nota-fila">{tabla.nota}</span>
-								{/if}
-							</td>
-							<td class="col-columnas">{tabla.columnas}</td>
-							<td>
-								<span class="estado {tabla.estado}">{ETIQUETA_ESTADO[tabla.estado]}</span>
-							</td>
+				{#if gruposVivos}
+					{#each gruposVivos as grupo (grupo.esquema)}
+						<tr class="fila-esquema">
+							<th colspan="4">{grupo.esquema}</th>
 						</tr>
+						{#each grupo.tablas as t (grupo.esquema + t.tabla)}
+							{@const info = descripcionDe(t.tabla)}
+							<tr class="fila">
+								<td class="col-nombre"><code>{t.tabla}</code></td>
+								<td class="col-proposito">
+									{#if info}
+										{info.proposito}
+										{#if info.nota}<span class="nota-fila">{info.nota}</span>{/if}
+									{:else}
+										<span class="sin-dato">sin descripción todavía</span>
+									{/if}
+								</td>
+								<td class="col-columnas">{info?.columnas ?? '—'}</td>
+								<td class="col-num">
+									<span class="filas" class:cero={t.filas === 0}>{t.filas.toLocaleString('es-MX')}</span>
+								</td>
+							</tr>
+						{/each}
 					{/each}
-				{/each}
+
+					{#if pendientes.length}
+						<tr class="fila-esquema">
+							<th colspan="4">
+								por definir
+								<span class="esquema-desc">acordadas en el diccionario, todavía sin crear</span>
+							</th>
+						</tr>
+						{#each pendientes as t (t.nombre)}
+							<tr class="fila">
+								<td class="col-nombre"><code>{t.nombre}</code></td>
+								<td class="col-proposito">{t.proposito}</td>
+								<td class="col-columnas">{t.columnas}</td>
+								<td class="col-num"><span class="estado no-existe">no existe aún</span></td>
+							</tr>
+						{/each}
+					{/if}
+				{:else}
+					{#each ESQUEMAS as esquema (esquema.nombre)}
+						<tr class="fila-esquema">
+							<th colspan="4">
+								{esquema.nombre}
+								<span class="esquema-desc">{esquema.descripcion}</span>
+							</th>
+						</tr>
+						{#each esquema.tablas as tabla (esquema.nombre + tabla.nombre)}
+							<tr class="fila">
+								<td class="col-nombre"><code>{tabla.nombre}</code></td>
+								<td class="col-proposito">
+									{tabla.proposito}
+									{#if tabla.nota}<span class="nota-fila">{tabla.nota}</span>{/if}
+								</td>
+								<td class="col-columnas">{tabla.columnas}</td>
+								<td class="col-num">
+									<span class="estado {tabla.estado}">{ETIQUETA_ESTADO[tabla.estado]}</span>
+								</td>
+							</tr>
+						{/each}
+					{/each}
+				{/if}
 			</tbody>
 		</table>
 	</div>
@@ -80,7 +167,7 @@
 	.cabecera {
 		display: flex;
 		align-items: baseline;
-		gap: 0.75rem;
+		gap: 0.5rem;
 		margin-bottom: 1rem;
 	}
 
@@ -98,12 +185,29 @@
 		padding: 0.15rem 0.65rem;
 	}
 
+	.en-vivo {
+		font-size: 0.72rem;
+		font-weight: 600;
+		color: #15803d;
+		background: rgba(21, 128, 61, 0.1);
+		border-radius: 999px;
+		padding: 0.15rem 0.55rem;
+	}
+
 	.nota {
 		font-size: 0.78rem;
 		color: #6b7280;
 		margin: 0 0 1.5rem;
-		max-width: 70ch;
+		max-width: 76ch;
 		line-height: 1.5;
+	}
+
+	.nota code {
+		font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+	}
+
+	.nota-error {
+		color: #92400e;
 	}
 
 	.tabla-wrap {
@@ -181,6 +285,11 @@
 		min-width: 18ch;
 	}
 
+	.sin-dato {
+		color: #9ca3af;
+		font-style: italic;
+	}
+
 	.nota-fila {
 		display: block;
 		font-size: 0.75rem;
@@ -195,6 +304,21 @@
 		color: #6b7280;
 		line-height: 1.5;
 		min-width: 20ch;
+	}
+
+	.col-num {
+		text-align: right;
+	}
+
+	.filas {
+		font-variant-numeric: tabular-nums;
+		font-weight: 600;
+		color: #15803d;
+	}
+
+	.filas.cero {
+		color: #9ca3af;
+		font-weight: 400;
 	}
 
 	.estado {
