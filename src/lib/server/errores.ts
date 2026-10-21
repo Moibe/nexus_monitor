@@ -1,3 +1,28 @@
+import { ErrorNexusBack } from '$lib/server/nexusBack';
+
+/**
+ * Lo mismo para la sección de Superadmins, que le habla a nexus_back. Un rechazo de nexus_back que ya trae su texto en español
+ * (un correo repetido, el último administrador que no se puede retirar) pasa tal cual con su código; lo demás —la llave, la red,
+ * una ruta que ese back todavía no tiene— se traduce a lo que quien opera tiene que hacer.
+ */
+export function describirErrorSuperadmins(e: unknown): { status: number; message: string } {
+	if (e instanceof ErrorNexusBack) {
+		if (e.status === 401) return { status: 502, message: 'nexus_back rechazó la llave (NEXUS_API_KEY no coincide con la suya).' };
+		if (e.status === 404 && e.message === 'Not Found') {
+			return { status: 502, message: 'Ese nexus_back no tiene /admins-plataforma: hoy solo existe en su rama dev (8084).' };
+		}
+		if (e.status >= 500) return { status: 502, message: 'nexus_back no pudo completar la operación (revisa su log).' };
+		return { status: e.status, message: e.message };
+	}
+	if (e instanceof DOMException && e.name === 'TimeoutError') return { status: 504, message: 'nexus_back no respondió en 30 s.' };
+	if (e instanceof TypeError && e.message === 'fetch failed') {
+		const causa = (e as { cause?: { code?: string } }).cause;
+		return { status: 502, message: `No se pudo alcanzar nexus_back (${causa?.code ?? 'red'}).` };
+	}
+	if (e instanceof Error && e.message.startsWith('Falta NEXUS_API_')) return { status: 500, message: e.message };
+	return { status: 502, message: 'No se pudo completar la operación contra nexus_back.' };
+}
+
 /**
  * Traduce la excepción a algo que se pueda enseñar. Con `fetch` nativo, un
  * fallo de red da `TypeError: fetch failed` y punto: la causa real (ENOTFOUND,
