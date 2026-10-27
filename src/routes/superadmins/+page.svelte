@@ -5,6 +5,7 @@
 	//
 	// ⚠️ Sin protección extra (decisión del usuario, 2026-10-20): Monitor no tiene login y estas acciones solo piden la llave de servicio
 	// que Monitor ya trae. Por eso arriba se dice a qué nexus_back se está hablando: crear una cuenta en el ambiente equivocado no se nota.
+	import { onMount } from 'svelte';
 	import { invalidateAll } from '$app/navigation';
 	import type { PageData } from './$types';
 	import type { AccesoNuevo, AdminPlataforma, EstadoAdmin } from '$lib/server/nexusBack';
@@ -113,6 +114,47 @@
 		}
 	}
 
+	// ── Refresco automático ─────────────────────────────────────────────────
+	//
+	// Los cambios propios ya se ven solos (cada acción llama a `invalidateAll`).
+	// Lo que no se veía es lo que hace OTRA persona: alguien entra por primera
+	// vez y aquí seguía diciendo "Pendiente" hasta recargar a mano.
+	//
+	// Se resuelve con sondeo y no con SSE/WebSocket a propósito: son unas pocas
+	// filas que mira quien opera de vez en cuando, y un stream obligaría a que
+	// nexus_back publicara eventos — mucho trabajo para lo que se gana.
+	const CADA_MS = 15_000;
+
+	/** Mientras hay un modal abierto o una acción en curso NO se refresca: la
+	 *  lista cambiaría debajo de las manos de quien opera, y el modal de accesos
+	 *  enseña una contraseña que solo se ve una vez. */
+	let ocupado = $derived(
+		acceso !== null || aRetirar !== null || creando || retirando || regenerando !== null
+	);
+
+	async function refrescar() {
+		if (ocupado || document.hidden) return;
+		try {
+			await invalidateAll();
+		} catch {
+			// Un sondeo que falla no molesta a quien opera: el siguiente reintenta.
+		}
+	}
+
+	onMount(() => {
+		const timer = setInterval(refrescar, CADA_MS);
+		// Al volver a la pestaña se refresca en el acto: es justo cuando más se
+		// nota el desfase (estuviste en el correo mientras el otro entraba).
+		const alVolver = () => {
+			if (!document.hidden) refrescar();
+		};
+		document.addEventListener('visibilitychange', alVolver);
+		return () => {
+			clearInterval(timer);
+			document.removeEventListener('visibilitychange', alVolver);
+		};
+	});
+
 	const ETIQUETA_ESTADO: Record<EstadoAdmin, string> = { pendiente: 'Pendiente', activo: 'Activo', inactivo: 'Inactivo' };
 	const AYUDA_ESTADO: Record<EstadoAdmin, string> = {
 		pendiente: 'Todavía no ha hecho su primer acceso con la contraseña temporal.',
@@ -132,6 +174,7 @@
 	<p class="destino" data-testid="destino">
 		{#if data.destino}
 			Se crean y se retiran en el nexus_back de <code>{data.destino}</code>.
+			<span class="auto">La lista se actualiza sola; no hace falta recargar.</span>
 		{:else}
 			<span class="sin-destino">Este Monitor no tiene NEXUS_API_URL: no sabe con qué nexus_back hablar.</span>
 		{/if}
@@ -275,6 +318,10 @@
 		font-size: 0.8rem;
 		color: #6b7280;
 		margin: 0 0 1.25rem;
+	}
+
+	.destino .auto {
+		color: #9ca3af;
 	}
 
 	.destino code {
