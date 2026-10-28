@@ -19,9 +19,10 @@
 
   const SECCIONES = [
     {
-      href: '/procesadores',
-      etiqueta: 'Procesadores',
-      icono: ['M8 6h13', 'M8 12h13', 'M8 18h13', 'M3 6h.01', 'M3 12h.01', 'M3 18h.01']
+      // Un escudo con una palomita: la cuenta con más poder del sistema.
+      href: '/superadmins',
+      etiqueta: 'Superadmins',
+      icono: ['M12 3l8 3v6c0 4.5-3.4 8.2-8 9-4.6-.8-8-4.5-8-9V6z', 'M9 12l2 2 4-4']
     },
     {
       href: '/tablas',
@@ -29,10 +30,9 @@
       icono: ['M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z', 'M3 9h18', 'M12 9v12']
     },
     {
-      // Un escudo con una palomita: la cuenta con más poder del sistema.
-      href: '/superadmins',
-      etiqueta: 'Superadmins',
-      icono: ['M12 3l8 3v6c0 4.5-3.4 8.2-8 9-4.6-.8-8-4.5-8-9V6z', 'M9 12l2 2 4-4']
+      href: '/procesadores',
+      etiqueta: 'Procesadores',
+      icono: ['M8 6h13', 'M8 12h13', 'M8 18h13', 'M3 6h.01', 'M3 12h.01', 'M3 18h.01']
     }
   ];
 
