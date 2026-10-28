@@ -5,8 +5,8 @@ export type TablaViva = { esquema: string; tabla: string; filas: number };
 // Pega contra nuestra propia ruta, que a su vez le pregunta a nexus_back. Si
 // eso falla (llave, back caído, endpoint todavía no promovido a prod), la
 // página no se cae: cae a la foto estática que ya traía, avisando.
-export const load: PageLoad = async ({ fetch }) => {
-	const r = await fetch('/api/tablas');
+export const load: PageLoad = async ({ fetch, params }) => {
+	const r = await fetch(`/api/${params.ambiente}/tablas`);
 
 	if (!r.ok) {
 		const cuerpo = await r.json().catch(() => null);

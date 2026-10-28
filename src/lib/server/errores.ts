@@ -7,9 +7,9 @@ import { ErrorNexusBack } from '$lib/server/nexusBack';
  */
 export function describirErrorSuperadmins(e: unknown): { status: number; message: string } {
 	if (e instanceof ErrorNexusBack) {
-		if (e.status === 401) return { status: 502, message: 'nexus_back rechazó la llave (NEXUS_API_KEY no coincide con la suya).' };
+		if (e.status === 401) return { status: 502, message: 'nexus_back rechazó la llave de ese ambiente: no coincide con la suya.' };
 		if (e.status === 404 && e.message === 'Not Found') {
-			return { status: 502, message: 'Ese nexus_back no tiene /admins-plataforma: hoy solo existe en su rama dev (8084).' };
+			return { status: 502, message: 'Ese nexus_back no tiene /admins-plataforma. ¿La URL del ambiente apunta a donde crees?' };
 		}
 		if (e.status >= 500) return { status: 502, message: 'nexus_back no pudo completar la operación (revisa su log).' };
 		return { status: e.status, message: e.message };
@@ -19,7 +19,9 @@ export function describirErrorSuperadmins(e: unknown): { status: number; message
 		const causa = (e as { cause?: { code?: string } }).cause;
 		return { status: 502, message: `No se pudo alcanzar nexus_back (${causa?.code ?? 'red'}).` };
 	}
-	if (e instanceof Error && e.message.startsWith('Falta NEXUS_API_')) return { status: 500, message: e.message };
+	// Un ambiente sin configurar NO es un fallo del back: es un .env incompleto,
+	// y el mensaje ya nombra las variables exactas. Pasa tal cual.
+	if (e instanceof Error && e.message.startsWith('Ambiente ')) return { status: 500, message: e.message };
 	return { status: 502, message: 'No se pudo completar la operación contra nexus_back.' };
 }
 
@@ -55,12 +57,12 @@ export function describirError(e: unknown): string {
 		return 'El procesador está en medio de otra operación; intenta de nuevo en un momento.';
 	if (e instanceof Error && e.message.startsWith('Document AI 4'))
 		return 'Document AI rechazó la petición. Revisa el proyecto y la location.';
-	if (e instanceof Error && e.message.startsWith('Falta NEXUS_API_'))
+	if (e instanceof Error && e.message.startsWith('Ambiente '))
 		return e.message;
 	if (e instanceof Error && e.message.startsWith('nexus_back 401'))
-		return 'nexus_back rechazó la llave (NEXUS_API_KEY no coincide con la suya).';
+		return 'nexus_back rechazó la llave de ese ambiente: no coincide con la suya.';
 	if (e instanceof Error && e.message.startsWith('nexus_back 404'))
-		return 'Ese nexus_back no tiene /esquema/tablas: hoy solo existe en su rama dev (8084).';
+		return 'Ese nexus_back no tiene /esquema/tablas. ¿La URL del ambiente apunta a donde crees?';
 	if (e instanceof Error && e.message.startsWith('nexus_back 503'))
 		return 'nexus_back no pudo leer el catálogo de SQL Server.';
 	if (e instanceof Error && e.message.startsWith('nexus_back '))

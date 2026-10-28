@@ -1,9 +1,9 @@
 import { redirect } from '@sveltejs/kit';
+import { AMBIENTE_POR_DEFECTO } from '$lib/ambientes';
 import type { PageLoad } from './$types';
 
-// La raíz no tiene contenido propio: hoy la única sección es Procesadores, así
-// que manda ahí en vez de dejar una home vacía. Cuando haya más secciones, este
-// es el lugar donde se decide cuál es la de entrada.
+// La raíz manda al ambiente de entrada. Es `dev` y nunca prod: si alguien
+// llega a Monitor sin decir a cuál va, que caiga donde equivocarse es gratis.
 export const load: PageLoad = () => {
-	redirect(307, '/procesadores');
+	redirect(307, `/${AMBIENTE_POR_DEFECTO}/procesadores`);
 };

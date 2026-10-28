@@ -42,7 +42,7 @@
 		creando = true;
 		errorCrear = null;
 		try {
-			const r = await fetch('/api/superadmins', {
+			const r = await fetch(`/api/${data.ambiente}/superadmins`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ email, nombre, apellidos, enviarCorreo })
@@ -67,7 +67,7 @@
 		regenerando = a.guid;
 		errorFila = null;
 		try {
-			const r = await fetch(`/api/superadmins/${encodeURIComponent(a.guid)}/reenviar`, { method: 'POST' });
+			const r = await fetch(`/api/${data.ambiente}/superadmins/${encodeURIComponent(a.guid)}/reenviar`, { method: 'POST' });
 			if (!r.ok) {
 				errorFila = await mensajeDe(r, `Error ${r.status} al regenerar la contraseña.`);
 				return;
@@ -96,7 +96,7 @@
 		retirando = true;
 		errorRetirar = null;
 		try {
-			const r = await fetch(`/api/superadmins/${encodeURIComponent(aRetirar.guid)}`, {
+			const r = await fetch(`/api/${data.ambiente}/superadmins/${encodeURIComponent(aRetirar.guid)}`, {
 				method: 'DELETE',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ motivo })

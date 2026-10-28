@@ -1,5 +1,6 @@
 <script lang="ts">
   import { page } from '$app/state';
+  import { esAmbiente, AMBIENTE_POR_DEFECTO } from '$lib/ambientes';
 
   // Barra lateral "de vidrio" con el mismo tilt 3D que la superior. Incluye el
   // handle para replegar/mostrar. Publica su ancho real a la variable CSS
@@ -12,6 +13,10 @@
   // seguir sin depender de ninguna librería de iconos (igual que el resto del
   // chrome). Va por sección y no fijo en el markup, porque si no todas
   // compartirían el mismo dibujo.
+  // Las secciones cuelgan del ambiente: su href se arma con el que esté
+  // activo, para que navegar por la izquierda NUNCA te cambie de ambiente.
+  let ambiente = $derived(esAmbiente(page.params.ambiente) ? page.params.ambiente : AMBIENTE_POR_DEFECTO);
+
   const SECCIONES = [
     {
       href: '/procesadores',
@@ -82,9 +87,9 @@
     <nav>
       {#each SECCIONES as seccion}
         <a
-          href={seccion.href}
+          href="/{ambiente}{seccion.href}"
           class="nav-item"
-          aria-current={page.url.pathname.startsWith(seccion.href) ? 'page' : undefined}
+          aria-current={page.url.pathname.startsWith(`/${ambiente}${seccion.href}`) ? 'page' : undefined}
         >
           <span class="nav-ico" aria-hidden="true">
             <svg

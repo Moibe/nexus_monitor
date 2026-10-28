@@ -1,4 +1,14 @@
 <script lang="ts">
+  import { page } from '$app/state';
+  import { AMBIENTES, esAmbiente, AMBIENTE_POR_DEFECTO } from '$lib/ambientes';
+
+  // El ambiente en el que estamos, y la sección que se está viendo. Cambiar de
+  // ambiente CONSERVA la sección: si estás en Tablas de dev y te pasas a prod,
+  // llegas a Tablas de prod, no a la pantalla de inicio. Es lo que uno espera
+  // al comparar dos ambientes, que es justo para lo que sirve esta barra.
+  let ambiente = $derived(esAmbiente(page.params.ambiente) ? page.params.ambiente : AMBIENTE_POR_DEFECTO);
+  let seccionActual = $derived(page.url.pathname.split('/')[2] || 'procesadores');
+
   // Barra superior "de vidrio" con tilt 3D al pasar el mouse (parallax).
   // Se calcula la posición relativa del cursor (-1..1 en cada eje) y la barra
   // se inclina suavemente hacia él; vuelve a plano al salir (transition).
@@ -45,6 +55,18 @@
     </span>
     <span class="brand-title">Nexus Monitor</span>
   </a>
+
+  <nav class="ambientes" aria-label="Ambiente">
+    {#each AMBIENTES as amb}
+      <a
+        href="/{amb.id}/{seccionActual}"
+        class="ambiente {amb.id}"
+        aria-current={amb.id === ambiente ? 'page' : undefined}
+      >
+        {amb.etiqueta}
+      </a>
+    {/each}
+  </nav>
 
   <div class="spacer"></div>
 </header>
@@ -101,6 +123,53 @@
     font-size: 1.2rem;
     font-weight: 700;
     letter-spacing: 0.005em;
+  }
+
+  .ambientes {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-left: 1.5rem;
+    padding-left: 1.5rem;
+    border-left: 1px solid rgba(17, 24, 39, 0.1);
+  }
+
+  .ambiente {
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-decoration: none;
+    border-radius: 999px;
+    padding: 0.3rem 0.85rem;
+    border: 1px solid transparent;
+    color: #6b7280;
+    transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+  }
+
+  .ambiente:hover {
+    background: rgba(17, 24, 39, 0.05);
+    color: #374151;
+  }
+
+  /* Cada ambiente con su color, y SOLO cuando está seleccionado: si los tres
+     fueran de color siempre, la barra sería un semáforo y el que importa —en
+     cuál estoy parado— dejaría de saltar a la vista. Producción va en rojo
+     porque es donde un clic de más duele. */
+  .ambiente.dev[aria-current='page'] {
+    color: #1d4ed8;
+    background: rgba(37, 99, 235, 0.12);
+    border-color: rgba(37, 99, 235, 0.35);
+  }
+
+  .ambiente.staging[aria-current='page'] {
+    color: #b45309;
+    background: rgba(180, 83, 9, 0.12);
+    border-color: rgba(180, 83, 9, 0.35);
+  }
+
+  .ambiente.prod[aria-current='page'] {
+    color: #ffffff;
+    background: #b91c1c;
+    border-color: #b91c1c;
   }
 
   .spacer {

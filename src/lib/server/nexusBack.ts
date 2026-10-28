@@ -1,15 +1,15 @@
-import { env } from '$env/dynamic/private';
+import { configDe } from '$lib/server/ambientes';
+import type { Ambiente } from '$lib/ambientes';
 
 // Monitor NO se conecta a SQL Server: le pregunta a nexus_back, que es quien
 // tiene las credenciales, el driver ODBC y la relación con el DBA. Así esas
 // credenciales siguen viviendo en UN solo lugar — y no en este repo, que es
 // público y además puede borrar procesadores.
 //
-// Sin default a propósito, igual que DOCAI_PROJECT_ID: un host quemado aquí
-// apuntaría en silencio al back equivocado (prod y dev leen la MISMA base
-// IA_Nexus, así que el error no se notaría por los datos).
-const API_URL = env.NEXUS_API_URL;
-const API_KEY = env.NEXUS_API_KEY;
+// TODO lo de aquí recibe `ambiente` como primer parámetro, y no se queda con
+// ninguna config en una constante de módulo. Esa es la diferencia que hace
+// posible atender los tres ambientes desde UN proceso: la configuración se
+// resuelve por petición, según a cuál le pidieron hablar.
 
 export type TablaViva = {
 	esquema: string;
@@ -18,19 +18,15 @@ export type TablaViva = {
 };
 
 /**
- * Inventario de tablas tal como está la base AHORA. El endpoint lo sirve
- * nexus_back (`GET /esquema/tablas`, solo lectura, solo metadatos).
- *
- * Ojo: ese endpoint vive hoy solo en la rama `dev` del back (puerto 8084). Si
- * `NEXUS_API_URL` apunta al back de producción (8083) responderá 404 hasta que
- * el cambio se promueva allá.
+ * Inventario de tablas tal como está la base de ESE ambiente AHORA. El
+ * endpoint lo sirve nexus_back (`GET /esquema/tablas`, solo lectura, solo
+ * metadatos). Los tres backs lo tienen (verificado 2026-10-28).
  */
-export async function obtenerTablas(): Promise<TablaViva[]> {
-	if (!API_URL) throw new Error('Falta NEXUS_API_URL: apunta al nexus_back que sirve /esquema.');
-	if (!API_KEY) throw new Error('Falta NEXUS_API_KEY: es la misma llave de servicio del front.');
+export async function obtenerTablas(ambiente: Ambiente): Promise<TablaViva[]> {
+	const { url, key } = configDe(ambiente);
 
-	const r = await fetch(`${API_URL.replace(/\/$/, '')}/esquema/tablas`, {
-		headers: { 'X-API-Key': API_KEY },
+	const r = await fetch(`${url}/esquema/tablas`, {
+		headers: { 'X-API-Key': key },
 		signal: AbortSignal.timeout(30_000)
 	});
 
@@ -89,18 +85,21 @@ export class ErrorNexusBack extends Error {
 	}
 }
 
-/** A qué nexus_back apunta este Monitor, para decírselo a quien opera: crear una cuenta en el ambiente equivocado no se nota. */
-export function destinoDeNexusBack(): string | null {
-	return API_URL ? API_URL.replace(/\/$/, '') : null;
+/** A qué nexus_back apunta un ambiente, para decírselo a quien opera: crear una cuenta en el ambiente equivocado no se nota. */
+export function destinoDeNexusBack(ambiente: Ambiente): string | null {
+	try {
+		return configDe(ambiente).url;
+	} catch {
+		return null;
+	}
 }
 
-async function llamar<T>(metodo: string, ruta: string, cuerpo?: unknown): Promise<T> {
-	if (!API_URL) throw new Error('Falta NEXUS_API_URL: apunta al nexus_back que sirve /admins-plataforma.');
-	if (!API_KEY) throw new Error('Falta NEXUS_API_KEY: es la misma llave de servicio del front.');
+async function llamar<T>(ambiente: Ambiente, metodo: string, ruta: string, cuerpo?: unknown): Promise<T> {
+	const { url, key } = configDe(ambiente);
 
-	const r = await fetch(`${API_URL.replace(/\/$/, '')}${ruta}`, {
+	const r = await fetch(`${url}${ruta}`, {
 		method: metodo,
-		headers: { 'X-API-Key': API_KEY, ...(cuerpo === undefined ? {} : { 'Content-Type': 'application/json' }) },
+		headers: { 'X-API-Key': key, ...(cuerpo === undefined ? {} : { 'Content-Type': 'application/json' }) },
 		body: cuerpo === undefined ? undefined : JSON.stringify(cuerpo),
 		signal: AbortSignal.timeout(30_000)
 	});
@@ -130,13 +129,20 @@ async function llamar<T>(metodo: string, ruta: string, cuerpo?: unknown): Promis
 	return json as T;
 }
 
-export const listarAdmins = () => llamar<{ total: number; administradores: AdminPlataforma[] }>('GET', '/admins-plataforma/');
+export const listarAdmins = (ambiente: Ambiente) =>
+	llamar<{ total: number; administradores: AdminPlataforma[] }>(ambiente, 'GET', '/admins-plataforma/');
 
-export const crearAdmin = (datos: { email: string; nombre: string; apellidos: string; enviarCorreo: boolean }) =>
-	llamar<AccesoNuevo>('POST', '/admins-plataforma/', datos);
+export const crearAdmin = (
+	ambiente: Ambiente,
+	datos: { email: string; nombre: string; apellidos: string; enviarCorreo: boolean }
+) => llamar<AccesoNuevo>(ambiente, 'POST', '/admins-plataforma/', datos);
 
-export const reenviarInvitacion = (guid: string) =>
-	llamar<AccesoNuevo>('POST', `/admins-plataforma/${encodeURIComponent(guid)}/reenviar-invitacion`);
+export const reenviarInvitacion = (ambiente: Ambiente, guid: string) =>
+	llamar<AccesoNuevo>(ambiente, 'POST', `/admins-plataforma/${encodeURIComponent(guid)}/reenviar-invitacion`);
 
-export const retirarAdmin = (guid: string, motivo: string) =>
-	llamar<{ retirado: boolean; email: string }>('DELETE', `/admins-plataforma/${encodeURIComponent(guid)}?motivo=${encodeURIComponent(motivo)}`);
+export const retirarAdmin = (ambiente: Ambiente, guid: string, motivo: string) =>
+	llamar<{ retirado: boolean; email: string }>(
+		ambiente,
+		'DELETE',
+		`/admins-plataforma/${encodeURIComponent(guid)}?motivo=${encodeURIComponent(motivo)}`
+	);

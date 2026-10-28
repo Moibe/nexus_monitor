@@ -3,8 +3,8 @@ import type { PageLoad } from './$types';
 
 // Pega contra nuestra propia ruta, que a su vez le pregunta a nexus_back. Si eso falla (llave, back caído, un back que todavía no tiene
 // `/admins-plataforma`), la página no se cae: enseña el motivo y deja el formulario fuera de uso hasta que haya con quién hablar.
-export const load: PageLoad = async ({ fetch }) => {
-	const r = await fetch('/api/superadmins');
+export const load: PageLoad = async ({ fetch, params }) => {
+	const r = await fetch(`/api/${params.ambiente}/superadmins`);
 
 	if (!r.ok) {
 		const cuerpo = await r.json().catch(() => null);
