@@ -6,9 +6,10 @@
 	// ⚠️ Sin protección extra (decisión del usuario, 2026-10-20): Monitor no tiene login y estas acciones solo piden la llave de servicio
 	// que Monitor ya trae. Por eso arriba se dice a qué nexus_back se está hablando: crear una cuenta en el ambiente equivocado no se nota.
 	import { onMount } from 'svelte';
+	import { SvelteSet } from 'svelte/reactivity';
 	import { invalidateAll } from '$app/navigation';
 	import type { PageData } from './$types';
-	import type { AccesoNuevo, AdminPlataforma, EstadoAdmin } from '$lib/server/nexusBack';
+	import type { AccesoNuevo, AdminPlataforma, CuentaCreada } from '$lib/server/nexusBack';
 	import { formatFecha } from '$lib/procesadores';
 	import ModalAcceso from '$lib/ModalAcceso.svelte';
 	import ModalRetirarAdmin from '$lib/ModalRetirarAdmin.svelte';
@@ -155,12 +156,35 @@
 		};
 	});
 
-	const ETIQUETA_ESTADO: Record<EstadoAdmin, string> = { pendiente: 'Pendiente', activo: 'Activo', inactivo: 'Inactivo' };
-	const AYUDA_ESTADO: Record<EstadoAdmin, string> = {
+	const ETIQUETA_ESTADO: Record<CuentaCreada['estado'], string> = {
+		pendiente: 'Pendiente',
+		activo: 'Activo',
+		inactivo: 'Inactivo',
+		retirado: 'Retirado'
+	};
+	const AYUDA_ESTADO: Record<CuentaCreada['estado'], string> = {
 		pendiente: 'Todavía no ha hecho su primer acceso con la contraseña temporal.',
 		activo: 'Ya hizo su primer acceso.',
-		inactivo: 'La cuenta está desactivada: no puede entrar.'
+		inactivo: 'La cuenta está desactivada: no puede entrar.',
+		retirado: 'La cuenta se retiró; queda aquí porque la creó este superadmin.'
 	};
+
+	// ── Desplegable: las cuentas que creó cada superadmin ───────────────────
+	//
+	// Qué filas están abiertas se guarda por guid, para que el refresco automático no las cierre.
+	const abiertos = new SvelteSet<string>();
+
+	function alternar(guid: string) {
+		if (abiertos.has(guid)) abiertos.delete(guid);
+		else abiertos.add(guid);
+	}
+
+	const ETIQUETA_ROL: Record<string, string> = { ADMIN: 'Admin de organización', ADMIN_PLATAFORMA: 'Superadmin' };
+	const rolDe = (rol: string | null) => (rol ? (ETIQUETA_ROL[rol] ?? rol) : '—');
+
+	/** Cuántos administradores creó (de organización o de plataforma; otros roles no cuentan). */
+	const adminsCreados = (a: AdminPlataforma) =>
+		(a.creados ?? []).filter((c) => c.rol === 'ADMIN' || c.rol === 'ADMIN_PLATAFORMA').length;
 </script>
 
 <div class="superadmins">
@@ -224,18 +248,34 @@
 				<table class="tabla-superadmins">
 					<thead>
 						<tr>
+							<th class="col-flecha"><span class="sr-only">Desplegar</span></th>
 							<th class="col-nombre">Nombre</th>
 							<th>Correo</th>
 							<th>Estado</th>
 							<th>Creado</th>
 							<th>Último acceso</th>
 							<th>Sesión</th>
+							<th>Admins creados</th>
 							<th class="col-accion"><span class="sr-only">Acciones</span></th>
 						</tr>
 					</thead>
 					<tbody>
 						{#each data.administradores as a (a.guid)}
-							<tr class="fila" data-testid="fila-superadmin" data-email={a.email}>
+							{@const abierto = abiertos.has(a.guid)}
+							<tr class="fila" class:abierta={abierto} data-testid="fila-superadmin" data-email={a.email}>
+								<td class="col-flecha">
+									<button
+										type="button"
+										class="flecha"
+										class:girada={abierto}
+										data-testid="desplegar-superadmin"
+										aria-expanded={abierto}
+										aria-label={`${abierto ? 'Ocultar' : 'Ver'} las cuentas que creó ${a.nombre} ${a.apellidos}`}
+										onclick={() => alternar(a.guid)}
+									>
+										<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6" /></svg>
+									</button>
+								</td>
 								<td class="col-nombre">{a.nombre} {a.apellidos}</td>
 								<td><code class="correo">{a.email}</code></td>
 								<td>
@@ -250,6 +290,15 @@
 										<span class="sesion abierta" data-testid="sesion-superadmin">Abierta</span>
 									{:else}
 										<span class="sesion">—</span>
+									{/if}
+								</td>
+								<td>
+									{#if a.creados === undefined}
+										<span class="sesion" title="Este nexus_back todavía no informa quién creó a quién.">—</span>
+									{:else if adminsCreados(a) > 0}
+										<span class="creados si" data-testid="admins-creados">{adminsCreados(a)}</span>
+									{:else}
+										<span class="creados" data-testid="admins-creados">Ninguno</span>
 									{/if}
 								</td>
 								<td class="col-accion">
@@ -276,6 +325,45 @@
 									</button>
 								</td>
 							</tr>
+							{#if abierto}
+								<tr class="detalle" data-testid="detalle-superadmin">
+									<td></td>
+									<td colspan="8">
+										{#if a.creados === undefined}
+											<p class="nota">El nexus_back de este ambiente todavía no informa quién creó a quién; aparecerá cuando tenga la versión nueva.</p>
+										{:else if a.creados.length === 0}
+											<p class="nota">No ha creado ninguna cuenta.</p>
+										{:else}
+											<table class="tabla-creados">
+												<thead>
+													<tr>
+														<th>Nombre</th>
+														<th>Correo</th>
+														<th>Rol</th>
+														<th>Organización</th>
+														<th>Estado</th>
+														<th>Creado</th>
+													</tr>
+												</thead>
+												<tbody>
+													{#each a.creados as c (c.guid)}
+														<tr data-testid="cuenta-creada">
+															<td>{c.nombre ? `${c.nombre} ${c.apellidos ?? ''}` : '—'}</td>
+															<td>{#if c.email}<code class="correo">{c.email}</code>{:else}—{/if}</td>
+															<td>{rolDe(c.rol)}</td>
+															<td>{c.organizacion ? (c.organizacion.nombre ?? 'Ya no existe') : '—'}</td>
+															<td>
+																<span class="estado {c.estado}" title={AYUDA_ESTADO[c.estado]}>{ETIQUETA_ESTADO[c.estado]}</span>
+															</td>
+															<td>{c.creadoEn ? formatFecha(c.creadoEn) : '—'}</td>
+														</tr>
+													{/each}
+												</tbody>
+											</table>
+										{/if}
+									</td>
+								</tr>
+							{/if}
 						{/each}
 					</tbody>
 				</table>
@@ -457,6 +545,101 @@
 
 	.col-nombre {
 		font-weight: 600;
+	}
+
+	.col-flecha {
+		width: 1.75rem;
+	}
+
+	.fila td.col-flecha {
+		padding-right: 0;
+	}
+
+	.flecha {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 1.5rem;
+		height: 1.5rem;
+		padding: 0;
+		color: #6b7280;
+		background: none;
+		border: none;
+		border-radius: 6px;
+		cursor: pointer;
+		transition: transform 0.15s ease;
+	}
+
+	.flecha:hover {
+		color: #1f2937;
+		background: rgba(17, 24, 39, 0.06);
+	}
+
+	.flecha.girada {
+		transform: rotate(90deg);
+	}
+
+	.fila.abierta td {
+		border-bottom-color: transparent;
+	}
+
+	.creados {
+		font-size: 0.78rem;
+		color: #9ca3af;
+	}
+
+	.creados.si {
+		font-weight: 600;
+		color: #1d4ed8;
+		background: rgba(37, 99, 235, 0.08);
+		border: 1px solid rgba(37, 99, 235, 0.18);
+		border-radius: 999px;
+		padding: 0.05rem 0.55rem;
+	}
+
+	.detalle td {
+		padding: 0 0.65rem 0.9rem;
+		border-bottom: 1px solid rgba(17, 24, 39, 0.06);
+	}
+
+	.detalle .nota {
+		margin: 0;
+		font-size: 0.8rem;
+		color: #6b7280;
+	}
+
+	.tabla-creados {
+		width: 100%;
+		border-collapse: collapse;
+		font-size: 0.8rem;
+		background: rgba(17, 24, 39, 0.02);
+		border: 1px solid rgba(17, 24, 39, 0.08);
+	}
+
+	.tabla-creados th {
+		text-align: left;
+		font-size: 0.68rem;
+		font-weight: 600;
+		letter-spacing: 0.03em;
+		text-transform: uppercase;
+		color: #6b7280;
+		padding: 0.4rem 0.6rem;
+		border-bottom: 1px solid rgba(17, 24, 39, 0.08);
+	}
+
+	.tabla-creados td {
+		padding: 0.4rem 0.6rem;
+		border-bottom: 1px solid rgba(17, 24, 39, 0.05);
+	}
+
+	.tabla-creados tbody tr:last-child td {
+		border-bottom: none;
+	}
+
+	.estado.retirado {
+		color: #9ca3af;
+		background: rgba(156, 163, 175, 0.12);
+		text-decoration: line-through;
 	}
 
 	.col-accion {

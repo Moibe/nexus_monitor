@@ -60,6 +60,21 @@ export type AdminPlataforma = {
 	ultimoLoginEn: string | null;
 	temporalEmitidaEn: string | null;
 	sesionActiva: boolean;
+	/** Las cuentas que dio de alta, según la bitácora del back. `undefined` en un nexus_back que todavía no lo informa. */
+	creados?: CuentaCreada[];
+};
+
+export type CuentaCreada = {
+	guid: string;
+	/** `null` solo si se retiró y su retiro no dejó el correo. */
+	email: string | null;
+	nombre: string | null;
+	apellidos: string | null;
+	estado: EstadoAdmin | 'retirado';
+	/** `ADMIN` (de una organización), `ADMIN_PLATAFORMA`, u otro rol de organización. */
+	rol: string | null;
+	organizacion: { guid: string; nombre: string | null } | null;
+	creadoEn: string | null;
 };
 
 /** Qué pasó con el correo de bienvenida. `omitido` es cuando se pidió no mandarlo. */
