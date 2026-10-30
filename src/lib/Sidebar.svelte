@@ -33,6 +33,12 @@
       href: '/procesadores',
       etiqueta: 'Procesadores',
       icono: ['M8 6h13', 'M8 12h13', 'M8 18h13', 'M3 6h.01', 'M3 12h.01', 'M3 18h.01']
+    },
+    {
+      // Un candado: quién puede entrar a qué.
+      href: '/roles',
+      etiqueta: 'Roles',
+      icono: ['M5 11h14a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-8a1 1 0 0 1 1-1z', 'M8 11V7a4 4 0 0 1 8 0v4']
     }
   ];
 
