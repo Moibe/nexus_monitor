@@ -130,14 +130,6 @@ export const CAPACIDADES: Capacidad[] = [
 	},
 	{
 		grupo: 'pantallas',
-		nombre: 'Módulo de uso (engrane)',
-		detalle: 'Lleva al centro operativo documental y a los expedientes.',
-		quienes: 'todos',
-		estado: 'decision',
-		decide: 'front: permisos.ts → puedeUsar'
-	},
-	{
-		grupo: 'pantallas',
 		nombre: 'Consultar expedientes, archivos procesados y sus datos extraídos',
 		quienes: 'todos',
 		estado: 'abierto',
@@ -145,10 +137,11 @@ export const CAPACIDADES: Capacidad[] = [
 	},
 	{
 		grupo: 'pantallas',
-		nombre: 'Motor de reglas (engrane)',
-		quienes: 'administran',
-		estado: 'propuesta',
-		decide: 'back: roles.PUEDEN_ADMINISTRAR · front: permisos.ts'
+		nombre: 'Módulo de uso (engrane)',
+		detalle: 'Lleva al centro operativo documental y a los expedientes.',
+		quienes: 'todos',
+		estado: 'decision',
+		decide: 'front: permisos.ts → puedeUsar'
 	},
 	{
 		grupo: 'pantallas',
@@ -160,14 +153,7 @@ export const CAPACIDADES: Capacidad[] = [
 	},
 	{
 		grupo: 'pantallas',
-		nombre: 'API Key (engrane)',
-		quienes: 'administran',
-		estado: 'propuesta',
-		decide: 'back: roles.PUEDEN_ADMINISTRAR · front: permisos.ts'
-	},
-	{
-		grupo: 'pantallas',
-		nombre: 'Webhooks (engrane)',
+		nombre: 'Motor de reglas (engrane)',
 		quienes: 'administran',
 		estado: 'propuesta',
 		decide: 'back: roles.PUEDEN_ADMINISTRAR · front: permisos.ts'
@@ -189,6 +175,20 @@ export const CAPACIDADES: Capacidad[] = [
 		estado: 'propuesta',
 		decide: 'front: permisos.ts',
 		sinPantalla: true
+	},
+	{
+		grupo: 'pantallas',
+		nombre: 'API Key (engrane)',
+		quienes: 'administran',
+		estado: 'propuesta',
+		decide: 'back: roles.PUEDEN_ADMINISTRAR · front: permisos.ts'
+	},
+	{
+		grupo: 'pantallas',
+		nombre: 'Webhooks (engrane)',
+		quienes: 'administran',
+		estado: 'propuesta',
+		decide: 'back: roles.PUEDEN_ADMINISTRAR · front: permisos.ts'
 	},
 	{
 		grupo: 'pantallas',
