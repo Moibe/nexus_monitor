@@ -146,7 +146,7 @@ export const CAPACIDADES: Capacidad[] = [
 	{
 		grupo: 'pantallas',
 		nombre: 'Módulo de configuración (engrane)',
-		detalle: 'Tipos documentales, tipos de expediente virtual, procesos y reglas (la única entrada al motor de reglas) y grupos.',
+		detalle: 'Tipos documentales, procesos y reglas (la única entrada al motor de reglas) y grupos.',
 		quienes: 'administran',
 		estado: 'propuesta',
 		decide: 'back: roles.PUEDEN_ADMINISTRAR · front: permisos.ts'
@@ -224,7 +224,7 @@ export const CAPACIDADES: Capacidad[] = [
 	{
 		grupo: 'acciones',
 		nombre: 'Organizar expedientes',
-		detalle: 'Crear expedientes (en un grupo), asignarles o cambiarles el grupo, agregar o quitar documentos, armar y borrar expedientes virtuales.',
+		detalle: 'Crear expedientes (en un grupo), asignarles o cambiarles el grupo y agregar o quitar documentos.',
 		quienes: 'organizan',
 		estado: 'propuesta',
 		decide: 'back: roles.PUEDEN_ORGANIZAR · front: permisos.ts'
@@ -240,14 +240,6 @@ export const CAPACIDADES: Capacidad[] = [
 	{
 		grupo: 'acciones',
 		nombre: 'Crear, cambiar, calibrar, activar y borrar tipos documentales',
-		quienes: 'administran',
-		estado: 'propuesta',
-		decide: 'back: roles.PUEDEN_ADMINISTRAR'
-	},
-	{
-		grupo: 'acciones',
-		nombre: 'Crear, cambiar y borrar tipos de expediente virtual',
-		detalle: 'Verlos, en cambio, es de todos.',
 		quienes: 'administran',
 		estado: 'propuesta',
 		decide: 'back: roles.PUEDEN_ADMINISTRAR'
