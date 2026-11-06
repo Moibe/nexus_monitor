@@ -146,7 +146,7 @@ export const CAPACIDADES: Capacidad[] = [
 	{
 		grupo: 'pantallas',
 		nombre: 'Módulo de configuración (engrane)',
-		detalle: 'Tipos documentales, procesos y reglas (la única entrada al motor de reglas).',
+		detalle: 'Tipos documentales y procesos (la única entrada al motor de reglas).',
 		quienes: 'administran',
 		estado: 'propuesta',
 		decide: 'back: roles.PUEDEN_ADMINISTRAR · front: permisos.ts'
