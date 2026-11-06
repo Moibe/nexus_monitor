@@ -239,7 +239,7 @@ export const CAPACIDADES: Capacidad[] = [
 	},
 	{
 		grupo: 'acciones',
-		nombre: 'Crear, cambiar, calibrar, activar y borrar tipos documentales',
+		nombre: 'Crear, cambiar, activar y borrar tipos documentales',
 		quienes: 'administran',
 		estado: 'propuesta',
 		decide: 'back: roles.PUEDEN_ADMINISTRAR'
