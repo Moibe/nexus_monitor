@@ -60,7 +60,7 @@
 
 			<p class="advertencia">
 				Esta acción es <strong>irreversible</strong>: se elimina el procesador junto con su dataset
-				y su esquema. Si NexusDoc todavía lo usa, dejará de funcionar.
+				y su esquema. Si Biblioratum todavía lo usa, dejará de funcionar.
 			</p>
 
 			<label class="campo">

@@ -501,7 +501,9 @@
 	.tabla-procesadores {
 		width: 100%;
 		border-collapse: collapse;
-		font-size: 0.875rem;
+		/* Un punto menos que las otras tablas (13 px y no 14): es la más ancha —seis columnas y los botones—, y con la
+		   tipografía de Biblioratum el nombre del procesador, que es largo, bajaba a tres renglones. */
+		font-size: 0.8125rem;
 	}
 
 	.tabla-procesadores thead th {
