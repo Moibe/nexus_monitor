@@ -99,7 +99,7 @@
 		<div>
 			<h2>Huérfanos</h2>
 			<p class="explica">
-				Procesadores <code>nexusdoc--</code> que ningún tipo documental señala en <strong>ninguno</strong> de los tres ambientes, y
+				Procesadores <code>biblioratum--</code> (o <code>nexusdoc--</code>, los de antes) que ningún tipo documental señala en <strong>ninguno</strong> de los tres ambientes, y
 				clasificadores de organizaciones que ya no existen.
 			</p>
 		</div>

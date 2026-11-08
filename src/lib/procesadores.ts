@@ -24,13 +24,18 @@ export type NombreParseado = {
 	slug: string | null;
 };
 
+// Los extractores nuevos se llaman `biblioratum--…` (desde el 2026-11-08); los de antes siguen `nexusdoc--…` en Google porque Document AI
+// no deja renombrar un procesador. Los dos son «de la aplicación» y se agrupan igual. `origen` conserva el valor 'nexusdoc' para ambos:
+// es una etiqueta interna del agrupado, no el nombre que se ve.
+const PREFIJOS_EXTRACTOR = ['biblioratum--', 'nexusdoc--'];
+
 export function parsearDisplayName(displayName: string | undefined): NombreParseado {
 	const dn = displayName ?? '';
 	// El clasificador PRIMERO: usa UN solo guion, así que sin este caso
 	// especial caería en 'legado'.
 	if (dn === 'nexusdoc-clasificador')
 		return { origen: 'clasificador', tipoId: null, version: null, slug: null };
-	if (!dn.startsWith('nexusdoc--'))
+	if (!PREFIJOS_EXTRACTOR.some((p) => dn.startsWith(p)))
 		return { origen: 'legado', tipoId: null, version: null, slug: null };
 
 	const partes = dn.split('--');

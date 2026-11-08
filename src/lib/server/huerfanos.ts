@@ -3,7 +3,7 @@ import { configDe } from '$lib/server/ambientes';
 import { listarProcesadores } from '$lib/server/docai';
 import { idCorto, type Procesador } from '$lib/procesadores';
 
-// Procesadores huérfanos: los `nexusdoc--…` que ningún tipo documental señala. Es lo que antes se hacía con
+// Procesadores huérfanos: los `biblioratum--…` (o `nexusdoc--…`, los de antes) que ningún tipo documental señala. Es lo que antes se hacía con
 // `limpiar_procesadores_huerfanos.py` en una terminal del servidor del back; las reglas son las de su
 // `servicios/procesadores_huerfanos.py`, copiadas aquí.
 //
@@ -13,7 +13,9 @@ import { idCorto, type Procesador } from '$lib/procesadores';
 // y solo es huérfano lo que no tiene dueño en ninguno. Si un ambiente no contesta, no se clasifica NADA: con un
 // ambiente a ciegas, cualquier "huérfano" podría ser suyo.
 
-const PREFIJO_EXTRACTOR = 'nexusdoc--';
+// Los extractores nuevos son `biblioratum--…` (desde el 2026-11-08); los de antes quedan `nexusdoc--…` (Document AI no renombra). Los dos
+// cuentan como de la aplicación. Los clasificadores siguen siendo `nexusdoc-clasificador…`.
+const PREFIJOS_EXTRACTOR = ['biblioratum--', 'nexusdoc--'];
 const PREFIJO_CLASIFICADOR_ORGANIZACION = 'nexusdoc-clasificador--';
 
 export type Dueno = { ambiente: Ambiente; tenant: string; tipo: string };
@@ -102,7 +104,7 @@ export async function repartirProcesadores(): Promise<Reparto> {
 			// organización no existe en NINGÚN ambiente.
 			const vivo = organizaciones.has(nombre.slice(PREFIJO_CLASIFICADOR_ORGANIZACION.length));
 			(vivo ? reparto.protegidos : reparto.huerfanos).push(p);
-		} else if (!nombre.startsWith(PREFIJO_EXTRACTOR)) {
+		} else if (!PREFIJOS_EXTRACTOR.some((prefijo) => nombre.startsWith(prefijo))) {
 			// No es de la aplicación (o es el clasificador del espacio de plataforma): no se toca.
 			reparto.protegidos.push(p);
 		} else if (duenos.has(p.id)) {
