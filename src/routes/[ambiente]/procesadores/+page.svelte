@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { invalidateAll } from '$app/navigation';
+	import { SvelteSet } from 'svelte/reactivity';
 	import type { PageData } from './$types';
 	import { formatFecha, type ProcesadorParseado } from '$lib/procesadores';
 	import { copiarTexto } from '$lib/copiar';
@@ -9,6 +10,14 @@
 	let { data }: { data: PageData } = $props();
 
 	let verHuerfanos = $state(false);
+
+	// Los grupos (un tipo documental cada uno) arrancan replegados; los abiertos se recuerdan por título
+	// mientras se esté en la página, también tras borrar o refrescar.
+	const gruposAbiertos = new SvelteSet<string>();
+	function alternarGrupo(titulo: string) {
+		if (gruposAbiertos.has(titulo)) gruposAbiertos.delete(titulo);
+		else gruposAbiertos.add(titulo);
+	}
 
 	let copiadoId = $state<string | null>(null);
 
@@ -304,12 +313,27 @@
 						{/each}
 					{:else}
 						{#each gruposVista as grupo (grupo.titulo)}
+							{@const abierto = gruposAbiertos.has(grupo.titulo)}
 							<tr class="fila-grupo">
-								<th colspan="7">{grupo.titulo}</th>
+								<th colspan="7">
+									<button
+										type="button"
+										class="grupo-btn"
+										data-testid="desplegar-grupo"
+										aria-expanded={abierto}
+										onclick={() => alternarGrupo(grupo.titulo)}
+									>
+										<svg class="chevron" class:girado={abierto} viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6" /></svg>
+										{grupo.titulo}
+										<span class="grupo-cuenta">{grupo.procesadores.length}</span>
+									</button>
+								</th>
 							</tr>
-							{#each grupo.procesadores as p (p.name)}
-								{@render filaProcesador(p, null)}
-							{/each}
+							{#if abierto}
+								{#each grupo.procesadores as p (p.name)}
+									{@render filaProcesador(p, null)}
+								{/each}
+							{/if}
 						{/each}
 					{/if}
 				</tbody>
@@ -602,8 +626,48 @@
 		color: var(--foreground);
 		text-transform: lowercase;
 		background: var(--muted-soft);
-		padding: 0.55rem 0.5rem;
+		padding: 0;
 		border-bottom: 1px solid var(--border);
+	}
+
+	.grupo-btn {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		width: 100%;
+		padding: 0.55rem 0.5rem;
+		font: inherit;
+		font-weight: inherit;
+		color: inherit;
+		text-align: left;
+		text-transform: inherit;
+		background: none;
+		border: none;
+		cursor: pointer;
+	}
+
+	.grupo-btn:hover {
+		background: var(--muted);
+	}
+
+	.chevron {
+		flex-shrink: 0;
+		color: var(--muted-foreground);
+		transition: transform 0.15s ease;
+	}
+
+	.chevron.girado {
+		transform: rotate(90deg);
+	}
+
+	.grupo-cuenta {
+		font-size: 0.75rem;
+		font-weight: 500;
+		color: var(--muted-foreground);
+		background: var(--card);
+		border: 1px solid var(--border);
+		border-radius: var(--radius-sm);
+		padding: 0 0.4rem;
 	}
 
 	.fila td {
