@@ -112,7 +112,8 @@
 
   /* El seleccionado va relleno, como el ítem activo de Biblioratum. Cada ambiente con su color, y SOLO cuando está
      seleccionado: si los tres fueran de color siempre, la barra sería un semáforo y el que importa —en cuál estoy
-     parado— dejaría de saltar a la vista. Producción va en rojo porque es donde un clic de más duele. */
+     parado— dejaría de saltar a la vista. Los colores son los de los chips de ambiente de webhook-central-ui
+     (Moibe, 2026-11-08): dev azul, staging ámbar #d97706 y producción verde #059669. */
   .ambiente[aria-current='page'] {
     color: var(--primary-foreground);
   }
@@ -122,10 +123,10 @@
   }
 
   .ambiente.staging[aria-current='page'] {
-    background: var(--warning);
+    background: #d97706;
   }
 
   .ambiente.prod[aria-current='page'] {
-    background: var(--destructive);
+    background: #059669;
   }
 </style>
