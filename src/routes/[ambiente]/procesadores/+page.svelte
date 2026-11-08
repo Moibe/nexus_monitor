@@ -4,6 +4,7 @@
 	import { formatFecha, type ProcesadorParseado } from '$lib/procesadores';
 	import { copiarTexto } from '$lib/copiar';
 	import ModalConfirmarEliminar from '$lib/ModalConfirmarEliminar.svelte';
+	import PanelHuerfanos from '$lib/PanelHuerfanos.svelte';
 
 	let { data }: { data: PageData } = $props();
 
@@ -205,6 +206,8 @@
 				(el máximo que permite consultar).
 			</p>
 		{/if}
+
+		<PanelHuerfanos onBorrados={invalidateAll} />
 	{/if}
 
 	{#if data.uso && data.grupos.length > 0}
