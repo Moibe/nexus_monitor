@@ -208,8 +208,13 @@
 				onclick={() => (verHuerfanos = !verHuerfanos)}
 			>
 				<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-					<circle cx="11" cy="11" r="7" />
-					<path d="m21 21-4.3-4.3" />
+					<!-- Cadena rota (el «unlink» de lucide): procesadores que perdieron a su dueño. -->
+					<path d="m18.84 12.25 1.72-1.71h-.02a5.004 5.004 0 0 0-.12-7.07 5.006 5.006 0 0 0-6.95 0l-1.72 1.71" />
+					<path d="m5.17 11.75-1.71 1.71a5.004 5.004 0 0 0 .12 7.07 5.006 5.006 0 0 0 6.95 0l1.71-1.71" />
+					<path d="M8 2v3" />
+					<path d="M2 8h3" />
+					<path d="M16 19v3" />
+					<path d="M19 16h3" />
 				</svg>
 			</button>
 		{/if}
@@ -410,23 +415,17 @@
 		width: 1.75rem;
 		height: 1.75rem;
 		padding: 0;
-		color: var(--muted-foreground);
-		background: var(--card);
-		border: 1px solid var(--border);
-		border-radius: var(--radius-md);
-		cursor: pointer;
-		transition: background 0.15s ease, color 0.15s ease;
-	}
-
-	.btn-huerfanos:hover {
-		background: var(--muted);
-		color: var(--foreground);
-	}
-
-	.btn-huerfanos.abierto {
 		color: var(--primary-foreground);
 		background: var(--primary);
-		border-color: var(--primary);
+		border: 1px solid transparent;
+		border-radius: var(--radius-md);
+		cursor: pointer;
+		transition: background 0.15s ease;
+	}
+
+	.btn-huerfanos:hover,
+	.btn-huerfanos.abierto {
+		background: var(--primary-strong);
 	}
 
 	.error {
