@@ -98,55 +98,58 @@
 {/if}
 
 <style>
+	/* El molde del `AlertDialog` de Biblioratum: velo negro al 10 % con un poco de desenfoque, tarjeta de 12 px de
+	   radio con borde fino y los mismos botones de siempre (cancelar «outline», confirmar «destructive» suave). */
 	.overlay {
 		position: fixed;
 		inset: 0;
-		background: rgba(17, 24, 39, 0.4);
+		background: rgba(0, 0, 0, 0.1);
+		backdrop-filter: blur(2px);
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		padding: 1rem;
-		z-index: 50;
+		z-index: 70;
 	}
 
 	.modal {
 		width: 100%;
-		max-width: 440px;
-		background: #ffffff;
-		color: #1f2937;
-		border: 1px solid rgba(255, 255, 255, 0.9);
-		border-radius: 16px;
-		box-shadow:
-			inset 0 1px 0 rgba(255, 255, 255, 0.6),
-			0 8px 24px rgba(0, 0, 0, 0.18);
-		padding: 1.5rem;
+		max-width: 28rem;
+		background: var(--card);
+		color: var(--foreground);
+		border: 1px solid var(--border);
+		border-radius: var(--radius-xl);
+		box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+		padding: 1.75rem 1.5rem 1.5rem;
 	}
 
 	.modal h2 {
 		margin: 0 0 0.75rem;
-		font-size: 1.1rem;
+		font-size: 1.125rem;
+		font-weight: 600;
 	}
 
 	.detalle {
 		margin: 0 0 0.75rem;
-		font-size: 0.9rem;
+		font-size: 0.875rem;
 		line-height: 1.6;
 	}
 
 	.detalle code {
 		display: block;
-		font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+		font-family: var(--font-mono);
 		font-size: 0.8rem;
-		color: #6b7280;
+		color: var(--muted-foreground);
 	}
 
 	.advertencia {
 		margin: 0 0 1rem;
-		font-size: 0.85rem;
-		color: #b45309;
-		background: rgba(180, 83, 9, 0.08);
-		border: 1px solid rgba(180, 83, 9, 0.2);
-		border-radius: 8px;
+		font-size: 0.8125rem;
+		line-height: 1.5;
+		color: var(--aviso-atencion-texto);
+		background: var(--aviso-atencion-fondo);
+		border: 1px solid var(--aviso-atencion-borde);
+		border-radius: var(--radius-lg);
 		padding: 0.65rem 0.8rem;
 	}
 
@@ -154,32 +157,39 @@
 		display: flex;
 		flex-direction: column;
 		gap: 0.35rem;
-		font-size: 0.8rem;
-		color: #6b7280;
+		font-size: 0.75rem;
+		color: var(--muted-foreground);
 		margin-bottom: 1rem;
 	}
 
 	.campo input {
+		box-sizing: border-box;
+		height: 2.25rem;
 		font: inherit;
-		font-size: 0.9rem;
-		color: #1f2937;
-		border: 1px solid rgba(17, 24, 39, 0.15);
-		border-radius: 8px;
-		padding: 0.5rem 0.65rem;
+		font-size: 0.875rem;
+		color: var(--foreground);
+		background: var(--card);
+		border: 1px solid var(--input);
+		border-radius: var(--radius-md);
+		padding: 0 0.65rem;
+		transition:
+			border-color 0.15s ease,
+			box-shadow 0.15s ease;
 	}
 
 	.campo input:focus {
-		outline: 2px solid rgba(37, 99, 235, 0.4);
-		outline-offset: 1px;
+		outline: none;
+		border-color: var(--ring);
+		box-shadow: var(--ring-sombra);
 	}
 
 	.error {
 		margin: 0 0 1rem;
-		font-size: 0.82rem;
-		color: #b91c1c;
-		background: rgba(185, 28, 28, 0.06);
-		border: 1px solid rgba(185, 28, 28, 0.2);
-		border-radius: 8px;
+		font-size: 0.8125rem;
+		color: var(--aviso-error-texto);
+		background: var(--aviso-error-fondo);
+		border: 1px solid var(--aviso-error-borde);
+		border-radius: var(--radius-lg);
 		padding: 0.5rem 0.7rem;
 	}
 
@@ -191,33 +201,38 @@
 
 	.btn-cancelar,
 	.btn-retirar {
+		height: 2.25rem;
+		padding: 0 1rem;
 		font: inherit;
-		font-size: 0.85rem;
-		border-radius: 8px;
-		padding: 0.45rem 0.9rem;
+		font-size: 0.875rem;
+		font-weight: 500;
+		border-radius: var(--radius-md);
 		cursor: pointer;
-		transition: background 0.15s ease, opacity 0.15s ease;
+		transition:
+			background 0.15s ease,
+			opacity 0.15s ease;
 	}
 
+	/* «outline» de Biblioratum. */
 	.btn-cancelar {
-		color: #374151;
-		background: rgba(17, 24, 39, 0.04);
-		border: 1px solid rgba(17, 24, 39, 0.12);
+		color: var(--foreground);
+		background: var(--card);
+		border: 1px solid var(--border);
 	}
 
 	.btn-cancelar:hover:not(:disabled) {
-		background: rgba(17, 24, 39, 0.08);
+		background: var(--muted);
 	}
 
+	/* «destructive» de Biblioratum: rojo suave, no relleno. */
 	.btn-retirar {
-		color: #ffffff;
-		background: #b91c1c;
-		border: 1px solid #b91c1c;
-		font-weight: 600;
+		color: var(--destructive);
+		background: var(--destructive-soft);
+		border: 1px solid transparent;
 	}
 
 	.btn-retirar:hover:not(:disabled) {
-		background: #991b1b;
+		background: var(--destructive-soft-hover);
 	}
 
 	.btn-cancelar:disabled,

@@ -80,46 +80,47 @@
 {/if}
 
 <style>
+	/* El molde del `AlertDialog` de Biblioratum (ver ModalConfirmarEliminar). */
 	.overlay {
 		position: fixed;
 		inset: 0;
-		background: rgba(17, 24, 39, 0.4);
+		background: rgba(0, 0, 0, 0.1);
+		backdrop-filter: blur(2px);
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		padding: 1rem;
-		z-index: 50;
+		z-index: 70;
 	}
 
 	.modal {
 		width: 100%;
-		max-width: 460px;
-		background: #ffffff;
-		color: #1f2937;
-		border: 1px solid rgba(255, 255, 255, 0.9);
-		border-radius: 16px;
-		box-shadow:
-			inset 0 1px 0 rgba(255, 255, 255, 0.6),
-			0 8px 24px rgba(0, 0, 0, 0.18);
-		padding: 1.5rem;
+		max-width: 29rem;
+		background: var(--card);
+		color: var(--foreground);
+		border: 1px solid var(--border);
+		border-radius: var(--radius-xl);
+		box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+		padding: 1.75rem 1.5rem 1.5rem;
 	}
 
 	.modal h2 {
 		margin: 0 0 0.75rem;
-		font-size: 1.1rem;
+		font-size: 1.125rem;
+		font-weight: 600;
 	}
 
 	.persona {
 		margin: 0 0 1rem;
-		font-size: 0.9rem;
+		font-size: 0.875rem;
 		line-height: 1.6;
 	}
 
 	.persona code {
 		display: block;
-		font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+		font-family: var(--font-mono);
 		font-size: 0.8rem;
-		color: #6b7280;
+		color: var(--muted-foreground);
 	}
 
 	.contrasena {
@@ -128,8 +129,8 @@
 
 	.etiqueta {
 		display: block;
-		font-size: 0.78rem;
-		color: #6b7280;
+		font-size: 0.75rem;
+		color: var(--muted-foreground);
 		margin-bottom: 0.3rem;
 	}
 
@@ -141,53 +142,57 @@
 
 	.fila code {
 		flex: 1;
-		font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+		font-family: var(--font-mono);
 		font-size: 0.95rem;
 		font-weight: 600;
 		letter-spacing: 0.02em;
-		color: #111827;
-		background: rgba(37, 99, 235, 0.06);
-		border: 1px solid rgba(37, 99, 235, 0.2);
-		border-radius: 8px;
+		color: var(--foreground);
+		background: var(--primary-soft);
+		border: 1px solid var(--primary-line);
+		border-radius: var(--radius-md);
 		padding: 0.5rem 0.65rem;
 		overflow-wrap: anywhere;
 	}
 
+	/* «outline» de Biblioratum. */
 	.btn-copiar {
+		height: 2.25rem;
+		padding: 0 0.9rem;
 		font: inherit;
-		font-size: 0.8rem;
-		color: #1d4ed8;
-		background: rgba(37, 99, 235, 0.08);
-		border: 1px solid rgba(37, 99, 235, 0.25);
-		border-radius: 8px;
-		padding: 0.45rem 0.8rem;
+		font-size: 0.8125rem;
+		font-weight: 500;
+		color: var(--foreground);
+		background: var(--card);
+		border: 1px solid var(--border);
+		border-radius: var(--radius-md);
 		cursor: pointer;
+		transition: background 0.15s ease;
 	}
 
 	.btn-copiar:hover {
-		background: rgba(37, 99, 235, 0.15);
+		background: var(--muted);
 	}
 
 	.correo {
 		margin: 0 0 0.75rem;
-		font-size: 0.84rem;
-		color: #92400e;
-		background: rgba(180, 83, 9, 0.08);
-		border: 1px solid rgba(180, 83, 9, 0.22);
-		border-radius: 8px;
+		font-size: 0.8125rem;
+		color: var(--aviso-atencion-texto);
+		background: var(--aviso-atencion-fondo);
+		border: 1px solid var(--aviso-atencion-borde);
+		border-radius: var(--radius-lg);
 		padding: 0.55rem 0.75rem;
 	}
 
 	.correo.bueno {
-		color: #15803d;
-		background: rgba(21, 128, 61, 0.08);
-		border-color: rgba(21, 128, 61, 0.25);
+		color: var(--aviso-ok-texto);
+		background: var(--aviso-ok-fondo);
+		border-color: var(--aviso-ok-borde);
 	}
 
 	.advertencia {
 		margin: 0 0 1rem;
-		font-size: 0.8rem;
-		color: #6b7280;
+		font-size: 0.8125rem;
+		color: var(--muted-foreground);
 	}
 
 	.botones {
@@ -196,18 +201,20 @@
 	}
 
 	.btn-entendido {
+		height: 2.25rem;
+		padding: 0 1.1rem;
 		font: inherit;
-		font-size: 0.85rem;
-		font-weight: 600;
-		color: #ffffff;
-		background: #2563eb;
-		border: 1px solid #2563eb;
-		border-radius: 8px;
-		padding: 0.45rem 1.1rem;
+		font-size: 0.875rem;
+		font-weight: 500;
+		color: var(--primary-foreground);
+		background: var(--primary);
+		border: 1px solid transparent;
+		border-radius: var(--radius-md);
 		cursor: pointer;
+		transition: background 0.15s ease;
 	}
 
 	.btn-entendido:hover {
-		background: #1d4ed8;
+		background: var(--primary-hover);
 	}
 </style>

@@ -18,17 +18,17 @@
 
 <style>
 	.cruzado {
-		margin: 0 0 1.25rem;
+		margin: 0 0 1.5rem;
 		padding: 0.8rem 1rem;
-		font-size: 0.85rem;
+		font-size: 0.875rem;
 		line-height: 1.5;
-		color: #7f1d1d;
-		background: rgba(185, 28, 28, 0.1);
-		border: 1px solid rgba(185, 28, 28, 0.35);
-		border-radius: 10px;
+		color: var(--aviso-error-texto);
+		background: var(--aviso-error-fondo);
+		border: 1px solid var(--aviso-error-borde);
+		border-radius: var(--radius-lg);
 	}
 
 	.cruzado code {
-		font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+		font-family: var(--font-mono);
 	}
 </style>

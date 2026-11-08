@@ -210,6 +210,11 @@
 		<PanelHuerfanos onBorrados={invalidateAll} />
 	{/if}
 
+	{#if data.error}
+		<p class="error">{data.error}</p>
+	{:else}
+	<!-- Todo lo del listado en UNA tarjeta, como «Listado de usuarios» de Biblioratum: filtros arriba, tabla debajo. -->
+	<div class="listado">
 	{#if data.uso && data.grupos.length > 0}
 		<div class="controles">
 			<div class="filtros" role="group" aria-label="Filtrar por uso">
@@ -239,9 +244,7 @@
 		</div>
 	{/if}
 
-	{#if data.error}
-		<p class="error">{data.error}</p>
-	{:else if data.grupos.length === 0}
+	{#if data.grupos.length === 0}
 		<p class="vacio">No hay procesadores.</p>
 	{:else if gruposVista.length === 0}
 		<p class="vacio">Ningún procesador coincide con el filtro.</p>
@@ -288,6 +291,8 @@
 			</table>
 		</div>
 	{/if}
+	</div>
+	{/if}
 
 	<ModalConfirmarEliminar
 		procesador={procesadorAEliminar}
@@ -323,6 +328,7 @@
 		<td><code class="id-corto">{p.id}</code></td>
 		<td>{formatFecha(p.createTime)}</td>
 		<td class="col-accion">
+			<div class="acciones">
 			<button type="button" class="copiar" onclick={() => copiarId(p.id)}>
 				{copiadoId === p.id ? 'Copiado' : 'Copiar id'}
 			</button>
@@ -341,79 +347,78 @@
 					<path d="M14 11v6" />
 				</svg>
 			</button>
+			</div>
 		</td>
 	</tr>
 {/snippet}
 
 <style>
+	/* Una columna con aire parejo entre sus bloques: así no importa cuáles están (el aviso de uso, el panel de huérfanos,
+	   el listado o el error) ni se acumulan márgenes. El encabezado y su nota van pegados (el -1.125rem se come el aire). */
 	.procesadores {
-		padding: 1.5rem 0.5rem 2.5rem;
+		display: flex;
+		flex-direction: column;
+		gap: 1.5rem;
 	}
 
 	.cabecera {
 		display: flex;
-		align-items: baseline;
+		align-items: center;
 		gap: 0.75rem;
-		margin-bottom: 1.5rem;
 	}
 
 	.cabecera h1 {
-		font-size: 1.4rem;
 		margin: 0;
+		font-size: 1.5rem;
+		font-weight: 600;
+		line-height: 2rem;
 	}
 
 	.total {
-		font-size: 0.85rem;
-		color: #6b7280;
-		background: rgba(37, 99, 235, 0.08);
-		border: 1px solid rgba(37, 99, 235, 0.18);
-		border-radius: 999px;
-		padding: 0.15rem 0.65rem;
+		font-size: 0.75rem;
+		font-weight: 500;
+		color: var(--muted-foreground);
+		background: var(--muted);
+		border-radius: var(--radius-sm);
+		padding: 0.125rem 0.5rem;
 	}
 
 	.error {
-		color: #b91c1c;
-		background: rgba(185, 28, 28, 0.06);
-		border: 1px solid rgba(185, 28, 28, 0.2);
-		border-radius: 10px;
+		margin: 0;
+		font-size: 0.875rem;
+		color: var(--aviso-error-texto);
+		background: var(--aviso-error-fondo);
+		border: 1px solid var(--aviso-error-borde);
+		border-radius: var(--radius-lg);
 		padding: 0.75rem 1rem;
 	}
 
 	.vacio {
-		color: #6b7280;
+		margin: 0;
+		font-size: 0.875rem;
+		color: var(--muted-foreground);
+	}
+
+	.cabecera + .nota-uso {
+		margin-top: -1.125rem;
 	}
 
 	.nota-uso {
-		font-size: 0.78rem;
-		color: #6b7280;
-		margin: -0.75rem 0 1.25rem;
+		margin: 0;
+		font-size: 0.875rem;
+		color: var(--muted-foreground);
 	}
 
 	.nota-uso-error {
-		color: #92400e;
+		color: var(--aviso-atencion-texto);
 	}
 
-	.uso {
-		font-size: 0.72rem;
-		font-weight: 600;
-		border-radius: 6px;
-		padding: 0.05rem 0.4rem;
-		white-space: nowrap;
-	}
-
-	.uso.usado {
-		color: #15803d;
-		background: rgba(21, 128, 61, 0.1);
-	}
-
-	.uso.solo-error {
-		color: #b45309;
-		background: rgba(180, 83, 9, 0.1);
-	}
-
-	.uso.sin-uso {
-		color: #9ca3af;
-		background: rgba(107, 114, 128, 0.06);
+	/* La tarjeta del listado: la de «Listado de usuarios» de Biblioratum (`rounded-2xl border-2 border-border bg-card p-5`). */
+	.listado {
+		background: var(--card);
+		border: 2px solid var(--border);
+		border-radius: var(--radius-2xl);
+		padding: 1.25rem;
 	}
 
 	.controles {
@@ -421,26 +426,26 @@
 		flex-wrap: wrap;
 		align-items: center;
 		justify-content: space-between;
-		gap: 0.6rem;
-		margin-bottom: 1.5rem;
-		padding-bottom: 1rem;
-		border-bottom: 1px solid rgba(17, 24, 39, 0.08);
+		gap: 0.75rem;
+		margin-bottom: 1rem;
 	}
 
 	.filtros {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.4rem;
+		gap: 0.5rem;
 	}
 
 	.filtro-btn {
+		height: 2rem;
+		padding: 0 0.75rem;
 		font: inherit;
-		font-size: 0.78rem;
-		color: #374151;
-		background: rgba(17, 24, 39, 0.03);
-		border: 1px solid rgba(17, 24, 39, 0.1);
-		border-radius: 999px;
-		padding: 0.3rem 0.75rem;
+		font-size: 0.75rem;
+		font-weight: 500;
+		color: var(--foreground);
+		background: var(--card);
+		border: 1px solid var(--border);
+		border-radius: var(--radius-md);
 		cursor: pointer;
 		transition:
 			background 0.15s ease,
@@ -449,34 +454,40 @@
 	}
 
 	.filtro-btn:hover {
-		background: rgba(37, 99, 235, 0.08);
-		border-color: rgba(37, 99, 235, 0.2);
+		background: var(--muted);
 	}
 
 	.filtro-btn.activo {
-		color: #1d4ed8;
-		background: rgba(37, 99, 235, 0.12);
-		border-color: rgba(37, 99, 235, 0.35);
-		font-weight: 600;
+		color: var(--primary-strong);
+		background: var(--primary-soft);
+		border-color: var(--primary-line);
 	}
 
 	.orden-label {
 		display: flex;
 		align-items: center;
-		gap: 0.4rem;
-		font-size: 0.78rem;
-		color: #6b7280;
+		gap: 0.5rem;
+		margin: 0;
+		font-size: 0.75rem;
+		color: var(--muted-foreground);
 	}
 
 	.orden-label select {
+		height: 2rem;
 		font: inherit;
-		font-size: 0.78rem;
-		color: #1f2937;
-		background: rgba(17, 24, 39, 0.03);
-		border: 1px solid rgba(17, 24, 39, 0.1);
-		border-radius: 8px;
-		padding: 0.3rem 0.5rem;
+		font-size: 0.75rem;
+		color: var(--foreground);
+		background: var(--card);
+		border: 1px solid var(--input);
+		border-radius: var(--radius-md);
+		padding: 0 0.5rem;
 		cursor: pointer;
+	}
+
+	.orden-label select:focus {
+		outline: none;
+		border-color: var(--ring);
+		box-shadow: var(--ring-sombra);
 	}
 
 	.tabla-wrap {
@@ -485,43 +496,44 @@
 		overflow-x: auto;
 	}
 
+	/* Tabla plana, como la de usuarios de Biblioratum: encabezado de 12 px en gris con línea arriba y abajo, una línea
+	   entre filas y nada de recuadros por fila. */
 	.tabla-procesadores {
 		width: 100%;
-		border-collapse: separate;
-		border-spacing: 0 0.3rem;
-		font-size: 0.86rem;
+		border-collapse: collapse;
+		font-size: 0.875rem;
 	}
 
 	.tabla-procesadores thead th {
 		text-align: left;
 		padding: 0;
 		white-space: nowrap;
+		border-top: 1px solid var(--border);
+		border-bottom: 1px solid var(--border);
 	}
 
 	.th-orden {
-		font: inherit;
-		font-size: 0.72rem;
-		font-weight: 600;
-		letter-spacing: 0.04em;
-		text-transform: uppercase;
-		color: #9ca3af;
-		background: none;
-		border: none;
-		margin: 0;
-		padding: 0 0.8rem 0.5rem;
-		cursor: pointer;
 		display: inline-flex;
 		align-items: center;
 		gap: 0.3rem;
+		margin: 0;
+		padding: 0.625rem 1rem 0.625rem 0.5rem;
+		font: inherit;
+		font-size: 0.75rem;
+		color: var(--muted-foreground);
+		background: none;
+		border: none;
+		cursor: pointer;
 		transition: color 0.15s ease;
 	}
 
 	.th-orden:hover {
-		color: #374151;
+		color: var(--foreground);
 	}
 
 	.th-orden.activo {
-		color: #1d4ed8;
+		color: var(--primary);
+		font-weight: 600;
 	}
 
 	.flecha {
@@ -530,54 +542,46 @@
 
 	.grupo-inline {
 		display: block;
-		font-size: 0.72rem;
+		font-size: 0.75rem;
 		font-weight: 400;
-		color: #9ca3af;
+		color: var(--muted-foreground);
 		margin-top: 0.1rem;
 	}
 
 	.fila-grupo th {
 		text-align: left;
-		font-size: 0.95rem;
+		font-size: 0.8125rem;
 		font-weight: 600;
-		color: #374151;
+		color: var(--foreground);
 		text-transform: lowercase;
-		padding: 0.9rem 0.4rem 0.4rem;
-		border-bottom: 1px solid rgba(17, 24, 39, 0.08);
-	}
-
-	.fila-grupo:first-child th {
-		padding-top: 0.2rem;
+		background: var(--muted-soft);
+		padding: 0.55rem 0.5rem;
+		border-bottom: 1px solid var(--border);
 	}
 
 	.fila td {
-		padding: 0.55rem 0.8rem;
-		border-top: 1px solid rgba(17, 24, 39, 0.06);
-		border-bottom: 1px solid rgba(17, 24, 39, 0.06);
-		background: rgba(17, 24, 39, 0.015);
+		padding: 0.75rem 1rem 0.75rem 0.5rem;
+		border-bottom: 1px solid var(--border);
 		white-space: nowrap;
 		vertical-align: middle;
 	}
 
-	.fila td:first-child {
-		border-left: 1px solid rgba(17, 24, 39, 0.06);
-		border-top-left-radius: 10px;
-		border-bottom-left-radius: 10px;
-	}
-
-	.fila td:last-child {
-		border-right: 1px solid rgba(17, 24, 39, 0.06);
-		border-top-right-radius: 10px;
-		border-bottom-right-radius: 10px;
-	}
-
-	.col-nombre {
+	/* El nombre baja de renglón (por los guiones) en vez de empujar el ID y los botones fuera de pantalla: Plus Jakarta
+	   Sans es más ancha que la tipografía de sistema y a 1440 px ya no cabían. `.fila td` (más específico) le pone
+	   `nowrap` a las demás celdas; esta lo vuelve a soltar. */
+	.fila td.col-nombre {
 		white-space: normal;
-		color: #1f2937;
+		color: var(--foreground);
 	}
 
-	td.col-accion {
-		display: flex;
+	/* Los botones de la fila van en su propio contenedor y no en el `td`: un `td` con `display: flex` deja de ser celda y
+	   se le descuadra la línea de abajo. */
+	.col-accion {
+		text-align: right;
+	}
+
+	.acciones {
+		display: inline-flex;
 		align-items: center;
 		justify-content: flex-end;
 		gap: 0.4rem;
@@ -592,69 +596,97 @@
 		white-space: nowrap;
 	}
 
-	.version {
+	/* Insignias: la de «Estatus» de Biblioratum (`rounded-md px-2 py-0.5 text-xs font-medium`). */
+	.version,
+	.estado,
+	.uso {
+		display: inline-block;
 		font-size: 0.75rem;
-		font-weight: 600;
-		color: #1d4ed8;
-		background: rgba(37, 99, 235, 0.1);
-		border-radius: 6px;
-		padding: 0.05rem 0.4rem;
+		font-weight: 500;
+		border-radius: var(--radius-sm);
+		padding: 0.125rem 0.5rem;
+		white-space: nowrap;
+	}
+
+	.version {
+		color: var(--primary-strong);
+		background: var(--primary-soft);
 	}
 
 	.estado {
-		font-size: 0.72rem;
-		font-weight: 600;
-		letter-spacing: 0.02em;
-		color: #6b7280;
-		background: rgba(107, 114, 128, 0.1);
-		border-radius: 6px;
-		padding: 0.05rem 0.4rem;
+		color: var(--muted-foreground);
+		background: var(--muted);
 	}
 
 	.estado.enabled {
-		color: #15803d;
-		background: rgba(21, 128, 61, 0.1);
+		color: var(--success);
+		background: var(--success-soft);
+	}
+
+	.uso.usado {
+		color: var(--success);
+		background: var(--success-soft);
+	}
+
+	.uso.solo-error {
+		color: var(--warning);
+		background: var(--warning-soft);
+	}
+
+	.uso.sin-uso {
+		color: var(--muted-foreground);
+		background: var(--muted);
 	}
 
 	.id-corto {
-		font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-		background: rgba(17, 24, 39, 0.05);
-		border-radius: 6px;
-		padding: 0.1rem 0.4rem;
+		font-family: var(--font-mono);
+		font-size: 0.8rem;
+		color: var(--secondary-foreground);
+		background: var(--muted);
+		border-radius: var(--radius-sm);
+		padding: 0.125rem 0.4rem;
 	}
 
 	.copiar {
+		height: 1.75rem;
+		padding: 0 0.6rem;
 		font: inherit;
 		font-size: 0.75rem;
-		color: #1d4ed8;
-		background: rgba(37, 99, 235, 0.08);
-		border: 1px solid rgba(37, 99, 235, 0.2);
-		border-radius: 6px;
-		padding: 0.15rem 0.5rem;
+		font-weight: 500;
+		color: var(--foreground);
+		background: var(--card);
+		border: 1px solid var(--border);
+		border-radius: var(--radius-md);
 		cursor: pointer;
 		transition: background 0.15s ease;
 	}
 
 	.copiar:hover {
-		background: rgba(37, 99, 235, 0.15);
+		background: var(--muted);
 	}
 
+	/* Gris hasta que se pasa el cursor: es la acción irreversible y no tiene por qué gritar en cada fila. */
 	.borrar {
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		color: #b45309;
-		background: rgba(180, 83, 9, 0.08);
-		border: 1px solid rgba(180, 83, 9, 0.2);
-		border-radius: 6px;
-		padding: 0.3rem;
+		width: 1.75rem;
+		height: 1.75rem;
+		padding: 0;
+		color: var(--muted-foreground);
+		background: var(--card);
+		border: 1px solid var(--border);
+		border-radius: var(--radius-md);
 		cursor: pointer;
-		transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+		transition:
+			background 0.15s ease,
+			color 0.15s ease,
+			border-color 0.15s ease;
 	}
 
 	.borrar:hover {
-		color: #ffffff;
-		background: #b91c1c;
-		border-color: #b91c1c;
+		color: var(--destructive);
+		background: var(--destructive-soft);
+		border-color: var(--destructive-line);
 	}
 </style>

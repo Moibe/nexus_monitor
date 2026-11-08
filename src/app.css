@@ -1,0 +1,132 @@
+/*
+ * Look and feel de Biblioratum en Nexus Monitor (pedido de Moibe, 2026-11-07).
+ *
+ * Los tokens de abajo son LOS MISMOS de `nexus_poc_svelte/src/app.css` (el front de Biblioratum): mismo azul, mismos
+ * grises, mismo borde, mismo radio y la misma tipografía (Plus Jakarta Sans). Si allá cambia la paleta, aquí se copia.
+ *
+ * Monitor no usa Tailwind: sus pantallas traen su CSS y leen estos tokens con `var(--…)`. Lo que sigue sin existir
+ * aquí es el modo oscuro de Biblioratum; los colores ya salen de variables, así que agregarlo después es cambiar
+ * valores, no reescribir pantallas.
+ */
+
+:root {
+	--radius: 0.625rem;
+	--radius-sm: 0.375rem;
+	--radius-md: 0.5rem;
+	--radius-lg: var(--radius);
+	--radius-xl: 0.875rem;
+	--radius-2xl: 1rem;
+
+	--background: #fcfcfc;
+	--foreground: #1f2937;
+	--card: #ffffff;
+	--card-foreground: #1f2937;
+	--primary: #4268fb;
+	--primary-foreground: #f9fafb;
+	--secondary: #f1f5f9;
+	--secondary-foreground: #374151;
+	--muted: #f1f5f9;
+	--muted-foreground: #6b7280;
+	--accent: #f1f5f9;
+	--accent-foreground: #1f2937;
+	--destructive: #dc2626;
+	--destructive-foreground: #ffffff;
+	--border: #e2e8f0;
+	--input: #e2e8f0;
+	--ring: #a0b3fc;
+
+	/* Lo que Biblioratum arma con `bg-primary/10`, `text-destructive`, etc. Aquí van con nombre porque el CSS plano no
+	   tiene el modificador de opacidad de Tailwind. */
+	--primary-soft: rgba(66, 104, 251, 0.1);
+	--primary-soft-hover: rgba(66, 104, 251, 0.16);
+	--primary-line: rgba(66, 104, 251, 0.3);
+	/* Un paso más oscuro: para el texto azul chico sobre fondo azul claro (el #4268fb pelado queda en ~4:1) y para el hover. */
+	--primary-strong: #3552e6;
+	--primary-hover: #3a5bf0;
+	--destructive-soft: rgba(220, 38, 38, 0.1);
+	--destructive-soft-hover: rgba(220, 38, 38, 0.18);
+	--destructive-line: rgba(220, 38, 38, 0.25);
+	--destructive-strong: #b91c1c;
+
+	/* Estados que Biblioratum pinta con las familias green/amber de Tailwind (700 para el texto). */
+	--success: #15803d;
+	--success-soft: rgba(21, 128, 61, 0.1);
+	--success-line: rgba(21, 128, 61, 0.25);
+	--warning: #b45309;
+	--warning-soft: rgba(180, 83, 9, 0.1);
+	--warning-line: rgba(180, 83, 9, 0.25);
+
+	/* Los avisos de Biblioratum (`AvisoVerde`): relleno plano de la familia 50 y borde de la 400. */
+	--aviso-ok-fondo: #f0fdf4;
+	--aviso-ok-borde: #4ade80;
+	--aviso-ok-texto: #15803d;
+	--aviso-error-fondo: #fef2f2;
+	--aviso-error-borde: #f87171;
+	--aviso-error-texto: #b91c1c;
+	--aviso-atencion-fondo: #fffbeb;
+	--aviso-atencion-borde: #fbbf24;
+	--aviso-atencion-texto: #92400e;
+
+	/* Lo que Biblioratum llama `bg-muted/50`: la fila resaltada o el encabezado de un grupo. */
+	--muted-soft: rgba(241, 245, 249, 0.6);
+
+	--ring-sombra: 0 0 0 3px rgba(160, 179, 252, 0.5);
+
+	--font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+	--font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+	--barra-alto: 4rem;
+	--contenido-ancho: 90rem;
+}
+
+html,
+body {
+	margin: 0;
+	padding: 0;
+}
+
+body {
+	min-height: 100vh;
+	background: var(--background);
+	color: var(--foreground);
+	font-family: var(--font-sans);
+	font-size: 16px;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+}
+
+/* Los controles de formulario no heredan la tipografía solos. */
+button,
+input,
+select,
+textarea {
+	font-family: inherit;
+}
+
+h1,
+h2,
+h3 {
+	color: var(--foreground);
+}
+
+code,
+pre,
+kbd {
+	font-family: var(--font-mono);
+}
+
+/* Foco visible con el mismo anillo que Biblioratum (`focus-visible:ring-3 ring-ring/50`). */
+:focus-visible {
+	outline: none;
+	box-shadow: var(--ring-sombra);
+}
+
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+	border-color: var(--ring);
+}
+
+::selection {
+	background: var(--primary-soft-hover);
+}

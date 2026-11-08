@@ -377,89 +377,107 @@
 </div>
 
 <style>
+	/* Una columna con aire parejo entre sus bloques (ver procesadores). */
 	.superadmins {
-		padding: 1.5rem 0.5rem 2.5rem;
+		display: flex;
+		flex-direction: column;
+		gap: 1.5rem;
 	}
 
 	.cabecera {
 		display: flex;
-		align-items: baseline;
+		align-items: center;
 		gap: 0.75rem;
-		margin-bottom: 0.5rem;
 	}
 
 	.cabecera h1 {
-		font-size: 1.4rem;
 		margin: 0;
+		font-size: 1.5rem;
+		font-weight: 600;
+		line-height: 2rem;
 	}
 
 	.total {
-		font-size: 0.85rem;
-		color: #6b7280;
-		background: rgba(37, 99, 235, 0.08);
-		border: 1px solid rgba(37, 99, 235, 0.18);
-		border-radius: 999px;
-		padding: 0.15rem 0.65rem;
+		font-size: 0.75rem;
+		font-weight: 500;
+		color: var(--muted-foreground);
+		background: var(--muted);
+		border-radius: var(--radius-sm);
+		padding: 0.125rem 0.5rem;
+	}
+
+	.cabecera + .destino {
+		margin-top: -1.125rem;
 	}
 
 	.destino {
-		font-size: 0.8rem;
-		color: #6b7280;
-		margin: 0 0 1.25rem;
+		margin: 0;
+		font-size: 0.875rem;
+		color: var(--muted-foreground);
 	}
 
 	.destino .auto {
-		color: #9ca3af;
+		color: var(--muted-foreground);
+		opacity: 0.8;
 	}
 
 	.destino code {
-		font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-		color: #374151;
+		font-family: var(--font-mono);
+		font-size: 0.8rem;
+		color: var(--secondary-foreground);
 	}
 
 	.sin-destino {
-		color: #92400e;
+		color: var(--aviso-atencion-texto);
 	}
 
 	.error {
-		color: #b91c1c;
-		background: rgba(185, 28, 28, 0.06);
-		border: 1px solid rgba(185, 28, 28, 0.2);
-		border-radius: 10px;
+		margin: 0;
+		font-size: 0.875rem;
+		color: var(--aviso-error-texto);
+		background: var(--aviso-error-fondo);
+		border: 1px solid var(--aviso-error-borde);
+		border-radius: var(--radius-lg);
 		padding: 0.75rem 1rem;
-		margin: 0 0 1rem;
 	}
 
 	.vacio {
-		color: #6b7280;
+		margin: 0;
+		font-size: 0.875rem;
+		color: var(--muted-foreground);
+	}
+
+	/* Dentro del formulario el error va entre los campos y el botón, no en la columna de la página. */
+	.nuevo .error {
+		margin: 0 0 1rem;
 	}
 
 	.nuevo {
-		margin: 0 0 1.5rem;
-		padding: 1rem 1.1rem 1.1rem;
-		background: rgba(17, 24, 39, 0.02);
-		border: 1px solid rgba(17, 24, 39, 0.08);
-		border-radius: 12px;
+		background: var(--card);
+		border: 2px solid var(--border);
+		border-radius: var(--radius-2xl);
+		padding: 1.25rem;
 	}
 
 	.nuevo h2 {
-		margin: 0 0 0.75rem;
-		font-size: 0.95rem;
+		margin: 0 0 1rem;
+		font-size: 0.875rem;
+		font-weight: 500;
 	}
 
 	.campos {
 		display: grid;
 		grid-template-columns: 1fr 1fr;
-		gap: 0.7rem;
-		margin-bottom: 0.75rem;
+		gap: 0.85rem;
+		margin-bottom: 1rem;
 	}
 
 	.campos label {
 		display: flex;
 		flex-direction: column;
-		gap: 0.3rem;
-		font-size: 0.78rem;
-		color: #6b7280;
+		gap: 0.35rem;
+		font-size: 0.75rem;
+		color: var(--muted-foreground);
 	}
 
 	.campos .ancho {
@@ -467,27 +485,42 @@
 	}
 
 	.campos input {
+		box-sizing: border-box;
+		height: 2.25rem;
 		font: inherit;
-		font-size: 0.9rem;
-		color: #1f2937;
-		background: #ffffff;
-		border: 1px solid rgba(17, 24, 39, 0.15);
-		border-radius: 8px;
-		padding: 0.5rem 0.65rem;
+		font-size: 0.875rem;
+		color: var(--foreground);
+		background: var(--card);
+		border: 1px solid var(--input);
+		border-radius: var(--radius-md);
+		padding: 0 0.65rem;
+		transition:
+			border-color 0.15s ease,
+			box-shadow 0.15s ease;
 	}
 
 	.campos input:focus {
-		outline: 2px solid rgba(37, 99, 235, 0.4);
-		outline-offset: 1px;
+		outline: none;
+		border-color: var(--ring);
+		box-shadow: var(--ring-sombra);
+	}
+
+	.campos input:disabled {
+		opacity: 0.5;
+		cursor: not-allowed;
 	}
 
 	.casilla {
 		display: flex;
 		align-items: center;
 		gap: 0.5rem;
-		font-size: 0.84rem;
-		color: #374151;
-		margin-bottom: 0.75rem;
+		font-size: 0.875rem;
+		color: var(--foreground);
+		margin-bottom: 1rem;
+	}
+
+	.casilla input {
+		accent-color: var(--primary);
 	}
 
 	.acciones-form {
@@ -496,19 +529,22 @@
 	}
 
 	.btn-crear {
+		height: 2.25rem;
+		padding: 0 1rem;
 		font: inherit;
-		font-size: 0.85rem;
-		font-weight: 600;
-		color: #ffffff;
-		background: #2563eb;
-		border: 1px solid #2563eb;
-		border-radius: 8px;
-		padding: 0.45rem 1.1rem;
+		font-size: 0.875rem;
+		font-weight: 500;
+		color: var(--primary-foreground);
+		background: var(--primary);
+		border: 1px solid transparent;
+		border-radius: var(--radius-md);
 		cursor: pointer;
+		white-space: nowrap;
+		transition: background 0.15s ease;
 	}
 
 	.btn-crear:hover:not(:disabled) {
-		background: #1d4ed8;
+		background: var(--primary-hover);
 	}
 
 	.btn-crear:disabled {
@@ -516,35 +552,41 @@
 		cursor: not-allowed;
 	}
 
+	/* La tarjeta del listado: la de «Listado de usuarios» de Biblioratum. */
 	.tabla-wrap {
 		overflow-x: auto;
+		background: var(--card);
+		border: 2px solid var(--border);
+		border-radius: var(--radius-2xl);
+		padding: 1.25rem;
 	}
 
 	.tabla-superadmins {
 		width: 100%;
 		border-collapse: collapse;
-		font-size: 0.85rem;
+		font-size: 0.875rem;
 	}
 
 	.tabla-superadmins thead th {
 		text-align: left;
-		font-size: 0.72rem;
-		font-weight: 600;
-		letter-spacing: 0.03em;
-		text-transform: uppercase;
-		color: #6b7280;
-		padding: 0.5rem 0.65rem;
-		border-bottom: 1px solid rgba(17, 24, 39, 0.1);
+		font-size: 0.75rem;
+		font-weight: 400;
+		color: var(--muted-foreground);
+		white-space: nowrap;
+		padding: 0.625rem 1rem 0.625rem 0.5rem;
+		border-top: 1px solid var(--border);
+		border-bottom: 1px solid var(--border);
 	}
 
 	.fila td {
-		padding: 0.6rem 0.65rem;
-		border-bottom: 1px solid rgba(17, 24, 39, 0.06);
+		padding: 0.75rem 1rem 0.75rem 0.5rem;
+		border-bottom: 1px solid var(--border);
 		vertical-align: middle;
 	}
 
 	.col-nombre {
-		font-weight: 600;
+		font-weight: 500;
+		color: var(--foreground);
 	}
 
 	.col-flecha {
@@ -562,21 +604,27 @@
 		width: 1.5rem;
 		height: 1.5rem;
 		padding: 0;
-		color: #6b7280;
+		color: var(--muted-foreground);
 		background: none;
 		border: none;
-		border-radius: 6px;
+		border-radius: var(--radius-sm);
 		cursor: pointer;
-		transition: transform 0.15s ease;
+		transition:
+			transform 0.15s ease,
+			background 0.15s ease;
 	}
 
 	.flecha:hover {
-		color: #1f2937;
-		background: rgba(17, 24, 39, 0.06);
+		color: var(--foreground);
+		background: var(--muted);
 	}
 
 	.flecha.girada {
 		transform: rotate(90deg);
+	}
+
+	.fila.abierta {
+		background: var(--muted-soft);
 	}
 
 	.fila.abierta td {
@@ -584,62 +632,61 @@
 	}
 
 	.creados {
-		font-size: 0.78rem;
-		color: #9ca3af;
+		font-size: 0.75rem;
+		color: var(--muted-foreground);
 	}
 
 	.creados.si {
-		font-weight: 600;
-		color: #1d4ed8;
-		background: rgba(37, 99, 235, 0.08);
-		border: 1px solid rgba(37, 99, 235, 0.18);
-		border-radius: 999px;
-		padding: 0.05rem 0.55rem;
+		display: inline-block;
+		font-weight: 500;
+		color: var(--primary-strong);
+		background: var(--primary-soft);
+		border-radius: var(--radius-sm);
+		padding: 0.125rem 0.5rem;
+	}
+
+	.detalle {
+		background: var(--muted-soft);
 	}
 
 	.detalle td {
-		padding: 0 0.65rem 0.9rem;
-		border-bottom: 1px solid rgba(17, 24, 39, 0.06);
+		padding: 0 0.5rem 1rem;
+		border-bottom: 1px solid var(--border);
 	}
 
 	.detalle .nota {
 		margin: 0;
-		font-size: 0.8rem;
-		color: #6b7280;
+		font-size: 0.8125rem;
+		color: var(--muted-foreground);
 	}
 
 	.tabla-creados {
 		width: 100%;
-		border-collapse: collapse;
-		font-size: 0.8rem;
-		background: rgba(17, 24, 39, 0.02);
-		border: 1px solid rgba(17, 24, 39, 0.08);
+		border-collapse: separate;
+		border-spacing: 0;
+		font-size: 0.8125rem;
+		background: var(--card);
+		border: 1px solid var(--border);
+		border-radius: var(--radius-lg);
+		overflow: hidden;
 	}
 
 	.tabla-creados th {
 		text-align: left;
-		font-size: 0.68rem;
-		font-weight: 600;
-		letter-spacing: 0.03em;
-		text-transform: uppercase;
-		color: #6b7280;
-		padding: 0.4rem 0.6rem;
-		border-bottom: 1px solid rgba(17, 24, 39, 0.08);
+		font-size: 0.75rem;
+		font-weight: 400;
+		color: var(--muted-foreground);
+		padding: 0.5rem 0.75rem;
+		border-bottom: 1px solid var(--border);
 	}
 
 	.tabla-creados td {
-		padding: 0.4rem 0.6rem;
-		border-bottom: 1px solid rgba(17, 24, 39, 0.05);
+		padding: 0.5rem 0.75rem;
+		border-bottom: 1px solid var(--border);
 	}
 
 	.tabla-creados tbody tr:last-child td {
 		border-bottom: none;
-	}
-
-	.estado.retirado {
-		color: #9ca3af;
-		background: rgba(156, 163, 175, 0.12);
-		text-decoration: line-through;
 	}
 
 	.col-accion {
@@ -657,62 +704,73 @@
 	}
 
 	.correo {
-		font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+		font-family: var(--font-mono);
 		font-size: 0.8rem;
-		color: #4b5563;
+		color: var(--secondary-foreground);
 	}
 
+	/* Insignias: la de «Estatus» de Biblioratum (`rounded-md px-2 py-0.5 text-xs font-medium`). */
 	.estado {
-		font-size: 0.72rem;
-		font-weight: 600;
-		border-radius: 6px;
-		padding: 0.1rem 0.45rem;
+		display: inline-block;
+		font-size: 0.75rem;
+		font-weight: 500;
+		border-radius: var(--radius-sm);
+		padding: 0.125rem 0.5rem;
 		white-space: nowrap;
 	}
 
 	.estado.activo {
-		color: #15803d;
-		background: rgba(21, 128, 61, 0.1);
+		color: var(--success);
+		background: var(--success-soft);
 	}
 
 	.estado.pendiente {
-		color: #b45309;
-		background: rgba(180, 83, 9, 0.1);
+		color: var(--warning);
+		background: var(--warning-soft);
 	}
 
 	.estado.inactivo {
-		color: #6b7280;
-		background: rgba(107, 114, 128, 0.12);
+		color: var(--muted-foreground);
+		background: var(--muted);
+	}
+
+	.estado.retirado {
+		color: var(--muted-foreground);
+		background: var(--muted);
+		text-decoration: line-through;
 	}
 
 	.sesion {
-		font-size: 0.78rem;
-		color: #9ca3af;
+		font-size: 0.8125rem;
+		color: var(--muted-foreground);
 	}
 
 	.sesion.abierta {
-		color: #15803d;
-		font-weight: 600;
+		color: var(--success);
+		font-weight: 500;
 	}
 
 	.regenerar,
 	.retirar {
+		height: 1.75rem;
+		padding: 0 0.65rem;
 		font: inherit;
-		font-size: 0.78rem;
-		border-radius: 6px;
-		padding: 0.25rem 0.6rem;
+		font-size: 0.75rem;
+		font-weight: 500;
+		border-radius: var(--radius-md);
 		cursor: pointer;
 		margin-left: 0.35rem;
+		transition: background 0.15s ease;
 	}
 
 	.regenerar {
-		color: #1d4ed8;
-		background: rgba(37, 99, 235, 0.06);
-		border: 1px solid rgba(37, 99, 235, 0.22);
+		color: var(--foreground);
+		background: var(--card);
+		border: 1px solid var(--border);
 	}
 
 	.regenerar:hover:not(:disabled) {
-		background: rgba(37, 99, 235, 0.14);
+		background: var(--muted);
 	}
 
 	.regenerar:disabled {
@@ -720,13 +778,14 @@
 		cursor: not-allowed;
 	}
 
+	/* El «destructive» de Biblioratum: rojo suave, no relleno. */
 	.retirar {
-		color: #b91c1c;
-		background: rgba(185, 28, 28, 0.05);
-		border: 1px solid rgba(185, 28, 28, 0.2);
+		color: var(--destructive);
+		background: var(--destructive-soft);
+		border: 1px solid transparent;
 	}
 
 	.retirar:hover {
-		background: rgba(185, 28, 28, 0.12);
+		background: var(--destructive-soft-hover);
 	}
 </style>

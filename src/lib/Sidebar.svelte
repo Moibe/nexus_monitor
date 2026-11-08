@@ -2,9 +2,9 @@
   import { page } from '$app/state';
   import { esAmbiente, AMBIENTE_POR_DEFECTO } from '$lib/ambientes';
 
-  // Barra lateral "de vidrio" con el mismo tilt 3D que la superior. Incluye el
-  // handle para replegar/mostrar. Publica su ancho real a la variable CSS
-  // --sidebar-width para que el panel de contenido se ajuste solo.
+  // Barra lateral con las secciones de la app, con el estilo de los ítems de
+  // navegación de Biblioratum: azul relleno el activo, gris claro al pasar el
+  // cursor. Replegada se queda en una columna de íconos.
   //
   // Las secciones de la app viven aquí. Cuando se agregue una nueva, basta con
   // sumarla a este arreglo: el estado activo sale solo de la ruta.
@@ -49,153 +49,93 @@
     collapsed?: boolean;
     toggleCollapsed: () => void;
   } = $props();
-
-  let tiltX = $state(0);
-  let tiltY = $state(0);
-  let sidebarWidth = $state(240);
-
-  $effect(() => {
-    if (typeof document !== 'undefined' && !collapsed) {
-      document.documentElement.style.setProperty('--sidebar-width', `${sidebarWidth}px`);
-    }
-  });
-
-  function handleMove(e: MouseEvent) {
-    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-    const nx = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-    const ny = ((e.clientY - rect.top) / rect.height) * 2 - 1;
-    const MAX = 1.2;
-    tiltX = -ny * MAX;
-    tiltY = nx * MAX;
-  }
-
-  function handleLeave() {
-    tiltX = 0;
-    tiltY = 0;
-  }
-
-  function handleCollapseClick(e: MouseEvent) {
-    e.stopPropagation();
-    tiltX = 0;
-    tiltY = 0;
-    toggleCollapsed();
-  }
 </script>
 
-{#if !collapsed}
-  <aside
-    class="sidebar"
-    style="transform: perspective(900px) rotateX({tiltX}deg) rotateY({tiltY}deg);"
-    bind:clientWidth={sidebarWidth}
-    onmousemove={handleMove}
-    onmouseleave={handleLeave}
-  >
-    <nav>
-      {#each SECCIONES as seccion}
-        <a
-          href="/{ambiente}{seccion.href}"
-          class="nav-item"
-          aria-current={page.url.pathname.startsWith(`/${ambiente}${seccion.href}`) ? 'page' : undefined}
-        >
-          <span class="nav-ico" aria-hidden="true">
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.8"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              {#each seccion.icono as d}
-                <path {d} />
-              {/each}
-            </svg>
-          </span>
-          <span>{seccion.etiqueta}</span>
-        </a>
-      {/each}
-    </nav>
-
-    <div class="sidebar-footer">
-      <button
-        type="button"
-        class="collapse-btn"
-        onclick={handleCollapseClick}
-        aria-label="Replegar barra"
+<aside class="sidebar" class:colapsada={collapsed}>
+  <nav aria-label="Secciones">
+    {#each SECCIONES as seccion}
+      <a
+        href="/{ambiente}{seccion.href}"
+        class="nav-item"
+        title={collapsed ? seccion.etiqueta : undefined}
+        aria-label={collapsed ? seccion.etiqueta : undefined}
+        aria-current={page.url.pathname.startsWith(`/${ambiente}${seccion.href}`) ? 'page' : undefined}
       >
-        <svg
-          width="18"
-          height="18"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2.2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        >
-          <path d="m15 18-6-6 6-6" />
-        </svg>
-      </button>
-    </div>
-  </aside>
-{:else}
-  <button
-    type="button"
-    class="reveal-handle"
-    onclick={toggleCollapsed}
-    aria-label="Mostrar barra"
-  >
-    <svg
-      width="18"
-      height="18"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      stroke-width="2.2"
-      stroke-linecap="round"
-      stroke-linejoin="round"
+        <span class="nav-ico" aria-hidden="true">
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            {#each seccion.icono as d}
+              <path {d} />
+            {/each}
+          </svg>
+        </span>
+        {#if !collapsed}<span class="nav-texto">{seccion.etiqueta}</span>{/if}
+      </a>
+    {/each}
+  </nav>
+
+  <div class="sidebar-footer">
+    <button
+      type="button"
+      class="collapse-btn"
+      onclick={toggleCollapsed}
+      aria-label={collapsed ? 'Mostrar la barra completa' : 'Replegar barra'}
+      aria-expanded={!collapsed}
     >
-      <path d="m9 18 6-6-6-6" />
-    </svg>
-  </button>
-{/if}
+      <svg
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2.2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
+        <path d={collapsed ? 'm9 18 6-6-6-6' : 'm15 18-6-6 6-6'} />
+      </svg>
+    </button>
+  </div>
+</aside>
 
 <style>
+  /* Pegada bajo la barra superior y de la altura de lo que queda de pantalla, para que no se vaya con el scroll. */
   .sidebar {
-    position: fixed;
-    top: calc(2rem + var(--topnav-height, 64px));
-    left: 1rem;
-    bottom: 1rem;
+    position: sticky;
+    top: var(--barra-alto);
     box-sizing: border-box;
-    width: max-content;
-    min-width: 240px;
-    max-width: 380px;
-    padding: 1.5rem 1rem;
+    flex-shrink: 0;
     display: flex;
     flex-direction: column;
-    background: #ffffff;
-    color: #1f2937;
-    border: 1px solid rgba(255, 255, 255, 0.9);
-    border-radius: 16px;
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.6),
-      0 8px 24px rgba(0, 0, 0, 0.18);
-    transition: transform 0.18s ease-out;
-    will-change: transform;
-    user-select: none;
+    width: 15rem;
+    height: calc(100vh - var(--barra-alto));
+    padding: 1rem 0.75rem;
+    background: var(--card);
+    border-right: 1px solid var(--border);
+    transition: width 0.2s ease-out;
+  }
+
+  .sidebar.colapsada {
+    width: 4.25rem;
   }
 
   nav {
     display: flex;
     flex-direction: column;
-    gap: 0.4rem;
+    gap: 0.25rem;
     flex: 1;
     min-height: 0;
     overflow-y: auto;
     scrollbar-width: none;
-    -ms-overflow-style: none;
   }
 
   nav::-webkit-scrollbar {
@@ -205,15 +145,21 @@
   .nav-item {
     display: flex;
     align-items: center;
-    gap: 0.6rem;
-    padding: 0.7rem 0.95rem;
-    color: #374151;
+    gap: 0.65rem;
+    padding: 0.65rem 0.75rem;
+    color: var(--foreground);
     text-decoration: none;
-    font-size: 0.95rem;
-    letter-spacing: 0.01em;
-    border-radius: 8px;
-    border: 1px solid transparent;
-    transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+    font-size: 0.875rem;
+    font-weight: 500;
+    white-space: nowrap;
+    border-radius: var(--radius-md);
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+
+  .colapsada .nav-item {
+    justify-content: center;
+    padding-left: 0;
+    padding-right: 0;
   }
 
   .nav-ico {
@@ -221,24 +167,20 @@
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    color: #9ca3af;
+    color: var(--muted-foreground);
   }
 
   .nav-item:hover {
-    background: rgba(37, 99, 235, 0.07);
-    border-color: rgba(37, 99, 235, 0.16);
-    color: #1f2937;
+    background: var(--muted);
   }
 
   .nav-item[aria-current='page'] {
-    color: #1d4ed8;
-    background: rgba(37, 99, 235, 0.1);
-    border-color: rgba(37, 99, 235, 0.3);
-    font-weight: 600;
+    color: var(--primary-foreground);
+    background: var(--primary);
   }
 
   .nav-item[aria-current='page'] .nav-ico {
-    color: #2563eb;
+    color: inherit;
   }
 
   .sidebar-footer {
@@ -247,44 +189,25 @@
     justify-content: center;
     margin-top: auto;
     padding-top: 1rem;
-    border-top: 1px solid rgba(17, 24, 39, 0.1);
+    border-top: 1px solid var(--border);
   }
 
-  .collapse-btn,
-  .reveal-handle {
-    background: rgba(37, 99, 235, 0.05);
-    border: 1px solid rgba(37, 99, 235, 0.18);
-    border-radius: 8px;
-    padding: 0.4rem 0.5rem;
-    color: #374151;
-    cursor: pointer;
+  .collapse-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    font: inherit;
-    transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    color: var(--foreground);
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: background 0.15s ease;
   }
 
-  .collapse-btn:hover,
-  .reveal-handle:hover {
-    background: rgba(37, 99, 235, 0.12);
-    border-color: rgba(37, 99, 235, 0.35);
-    color: #1d4ed8;
-  }
-
-  /* Cuando la barra está replegada, queda solo este handle flotante de vidrio. */
-  .reveal-handle {
-    position: fixed;
-    left: 0.75rem;
-    top: 50%;
-    transform: translateY(-50%);
-    padding: 0.55rem 0.45rem;
-    border-radius: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.9);
-    background: #ffffff;
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.6),
-      0 8px 24px rgba(0, 0, 0, 0.18);
-    z-index: 10;
+  .collapse-btn:hover {
+    background: var(--muted);
   }
 </style>

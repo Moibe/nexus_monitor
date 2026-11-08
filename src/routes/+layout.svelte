@@ -1,28 +1,20 @@
 <script lang="ts">
+  import '@fontsource/plus-jakarta-sans/400.css';
+  import '@fontsource/plus-jakarta-sans/500.css';
+  import '@fontsource/plus-jakarta-sans/600.css';
+  import '../app.css';
   import favicon from '$lib/assets/favicon.svg';
   import Sidebar from '$lib/Sidebar.svelte';
   import TopNav from '$lib/TopNav.svelte';
 
   let { children } = $props();
-  // Arranca desplegada: ya hay una sección real (Procesadores) que mostrar.
-  // Estuvo en `true` mientras el sidebar no tenía contenido, para no enseñar
-  // una caja blanca vacía.
+  // Arranca desplegada: ya hay secciones reales que mostrar. Replegada queda
+  // una columna angosta con solo los íconos (no desaparece, como hacía el
+  // «handle» flotante de la versión de vidrio).
   let collapsed = $state(false);
 
-  // Usa View Transitions cuando el browser las soporta para animar el repliegue
-  // de la barra; si no, hace el cambio directo.
-  function withTransition(fn: () => void) {
-    if (typeof document !== 'undefined' && 'startViewTransition' in document) {
-      (document as unknown as { startViewTransition: (cb: () => void) => void }).startViewTransition(fn);
-    } else {
-      fn();
-    }
-  }
-
   function toggleCollapsed() {
-    withTransition(() => {
-      collapsed = !collapsed;
-    });
+    collapsed = !collapsed;
   }
 </script>
 
@@ -31,63 +23,65 @@
   <link rel="icon" href={favicon} />
 </svelte:head>
 
-<TopNav />
-<Sidebar {collapsed} {toggleCollapsed} />
-<main class={collapsed ? 'collapsed' : ''}>
-  <div class="work-scroll">
-    {@render children()}
+<!-- La cáscara es la de Biblioratum: barra superior blanca con borde abajo, fondo gris claro, contenido con tope de ancho y
+     el pie de «© Grupo CSI». Lo único que Biblioratum no tiene y Monitor sí es la barra lateral con las secciones. -->
+<div class="app">
+  <TopNav />
+
+  <div class="cuerpo">
+    <Sidebar {collapsed} {toggleCollapsed} />
+
+    <div class="columna">
+      <main>
+        {@render children()}
+      </main>
+
+      <footer>
+        <p>© 2026 Grupo CSI. Todos los derechos reservados.</p>
+      </footer>
+    </div>
   </div>
-</main>
+</div>
 
 <style>
-  :global(:root) {
-    --topnav-height: 64px;
-  }
-
-  :global(html, body) {
-    margin: 0;
-    padding: 0;
-    height: 100%;
-  }
-
-  :global(body) {
+  .app {
+    display: flex;
+    flex-direction: column;
     min-height: 100vh;
-    background: linear-gradient(135deg, #4169e1 0%, #1e3a8a 100%);
-    background-attachment: fixed;
-    color: rgba(255, 255, 255, 0.95);
-    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  }
+
+  .cuerpo {
+    display: flex;
+    flex: 1;
+    align-items: flex-start;
+  }
+
+  .columna {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-width: 0;
+    min-height: calc(100vh - var(--barra-alto));
   }
 
   main {
-    position: fixed;
-    top: calc(2rem + var(--topnav-height));
-    right: 1rem;
-    bottom: 1rem;
+    flex: 1;
     box-sizing: border-box;
-    background: #ffffff;
-    color: #1f2937;
-    border: 1px solid rgba(255, 255, 255, 0.9);
-    border-radius: 16px;
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.6),
-      0 8px 24px rgba(0, 0, 0, 0.18);
-    overflow: hidden;
-    transition: left 0.22s ease-out;
-    left: calc(var(--sidebar-width, 240px) + 2rem);
+    width: 100%;
+    max-width: var(--contenido-ancho);
+    margin: 0 auto;
+    padding: 2rem 1.5rem;
   }
 
-  main.collapsed {
-    left: 2rem;
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 1.5rem 0;
   }
 
-  .work-scroll {
-    position: absolute;
-    top: 16px;
-    bottom: 16px;
-    left: 0;
-    right: 0;
-    overflow-y: auto;
-    overflow-x: hidden;
-    padding: 0 16px;
+  footer p {
+    margin: 0;
+    text-align: center;
+    font-size: 0.75rem;
+    color: var(--muted-foreground);
   }
 </style>

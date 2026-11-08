@@ -160,148 +160,147 @@
 </div>
 
 <style>
+	/* Una columna con aire parejo entre sus bloques (ver procesadores). */
 	.tablas {
-		padding: 1.5rem 0.5rem 2.5rem;
+		display: flex;
+		flex-direction: column;
+		gap: 1.5rem;
 	}
 
 	.cabecera {
 		display: flex;
-		align-items: baseline;
+		align-items: center;
 		gap: 0.5rem;
-		margin-bottom: 1rem;
 	}
 
 	.cabecera h1 {
-		font-size: 1.4rem;
 		margin: 0;
+		font-size: 1.5rem;
+		font-weight: 600;
+		line-height: 2rem;
 	}
 
 	.total {
-		font-size: 0.85rem;
-		color: #6b7280;
-		background: rgba(37, 99, 235, 0.08);
-		border: 1px solid rgba(37, 99, 235, 0.18);
-		border-radius: 999px;
-		padding: 0.15rem 0.65rem;
+		font-size: 0.75rem;
+		font-weight: 500;
+		color: var(--muted-foreground);
+		background: var(--muted);
+		border-radius: var(--radius-sm);
+		padding: 0.125rem 0.5rem;
 	}
 
 	.en-vivo {
-		font-size: 0.72rem;
-		font-weight: 600;
-		color: #15803d;
-		background: rgba(21, 128, 61, 0.1);
-		border-radius: 999px;
-		padding: 0.15rem 0.55rem;
+		font-size: 0.75rem;
+		font-weight: 500;
+		color: var(--success);
+		background: var(--success-soft);
+		border-radius: var(--radius-sm);
+		padding: 0.125rem 0.5rem;
+	}
+
+	.cabecera + .nota {
+		margin-top: -1.125rem;
 	}
 
 	.nota {
-		font-size: 0.78rem;
-		color: #6b7280;
-		margin: 0 0 1.5rem;
+		font-size: 0.875rem;
+		color: var(--muted-foreground);
+		margin: 0;
 		max-width: 76ch;
-		line-height: 1.5;
+		line-height: 1.55;
 	}
 
 	.nota code {
-		font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+		font-family: var(--font-mono);
+		font-size: 0.8rem;
 	}
 
 	.nota-error {
-		color: #92400e;
+		color: var(--aviso-atencion-texto);
 	}
 
+	/* La tarjeta del listado: la de «Listado de usuarios» de Biblioratum. */
 	.tabla-wrap {
 		overflow-x: auto;
+		background: var(--card);
+		border: 2px solid var(--border);
+		border-radius: var(--radius-2xl);
+		padding: 1.25rem;
 	}
 
 	.tabla-esquema {
 		width: 100%;
-		border-collapse: separate;
-		border-spacing: 0 0.3rem;
-		font-size: 0.86rem;
+		border-collapse: collapse;
+		font-size: 0.875rem;
 	}
 
 	.tabla-esquema thead th {
 		text-align: left;
-		font-size: 0.72rem;
-		font-weight: 600;
-		letter-spacing: 0.04em;
-		text-transform: uppercase;
-		color: #9ca3af;
-		padding: 0 0.8rem 0.5rem;
+		font-size: 0.75rem;
+		font-weight: 400;
+		color: var(--muted-foreground);
+		padding: 0.625rem 1rem 0.625rem 0.5rem;
 		white-space: nowrap;
+		border-top: 1px solid var(--border);
+		border-bottom: 1px solid var(--border);
 	}
 
 	.fila-esquema th {
 		text-align: left;
-		font-size: 0.95rem;
+		font-size: 0.8125rem;
 		font-weight: 600;
-		color: #374151;
-		padding: 0.9rem 0.4rem 0.4rem;
-		border-bottom: 1px solid rgba(17, 24, 39, 0.08);
-	}
-
-	.fila-esquema:first-child th {
-		padding-top: 0.2rem;
+		color: var(--foreground);
+		background: var(--muted-soft);
+		padding: 0.55rem 0.5rem;
+		border-bottom: 1px solid var(--border);
 	}
 
 	.esquema-desc {
 		font-weight: 400;
-		font-size: 0.78rem;
-		color: #9ca3af;
+		font-size: 0.75rem;
+		color: var(--muted-foreground);
 		margin-left: 0.5rem;
 	}
 
 	.fila td {
-		padding: 0.55rem 0.8rem;
-		border-top: 1px solid rgba(17, 24, 39, 0.06);
-		border-bottom: 1px solid rgba(17, 24, 39, 0.06);
-		background: rgba(17, 24, 39, 0.015);
+		padding: 0.75rem 1rem 0.75rem 0.5rem;
+		border-bottom: 1px solid var(--border);
 		vertical-align: top;
 	}
 
-	.fila td:first-child {
-		border-left: 1px solid rgba(17, 24, 39, 0.06);
-		border-top-left-radius: 10px;
-		border-bottom-left-radius: 10px;
-	}
-
 	.fila td:last-child {
-		border-right: 1px solid rgba(17, 24, 39, 0.06);
-		border-top-right-radius: 10px;
-		border-bottom-right-radius: 10px;
 		white-space: nowrap;
 	}
 
 	.col-nombre code {
-		font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-		font-size: 0.82rem;
-		color: #1f2937;
+		font-family: var(--font-mono);
+		font-size: 0.8rem;
+		color: var(--foreground);
 		white-space: nowrap;
 	}
 
 	.col-proposito {
-		color: #1f2937;
+		color: var(--foreground);
 		min-width: 18ch;
 	}
 
 	.sin-dato {
-		color: #9ca3af;
+		color: var(--muted-foreground);
 		font-style: italic;
 	}
 
 	.nota-fila {
 		display: block;
 		font-size: 0.75rem;
-		color: #9ca3af;
+		color: var(--muted-foreground);
 		margin-top: 0.2rem;
 		line-height: 1.4;
 	}
 
 	.col-columnas {
-		font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+		font-family: var(--font-mono);
 		font-size: 0.75rem;
-		color: #6b7280;
+		color: var(--muted-foreground);
 		line-height: 1.5;
 		min-width: 20ch;
 	}
@@ -313,55 +312,57 @@
 	.filas {
 		font-variant-numeric: tabular-nums;
 		font-weight: 600;
-		color: #15803d;
+		color: var(--success);
 	}
 
 	.filas.cero {
-		color: #9ca3af;
+		color: var(--muted-foreground);
 		font-weight: 400;
 	}
 
+	/* Insignias: la de «Estatus» de Biblioratum (`rounded-md px-2 py-0.5 text-xs font-medium`). */
 	.estado {
-		font-size: 0.72rem;
-		font-weight: 600;
-		border-radius: 6px;
-		padding: 0.05rem 0.4rem;
+		display: inline-block;
+		font-size: 0.75rem;
+		font-weight: 500;
+		border-radius: var(--radius-sm);
+		padding: 0.125rem 0.5rem;
 		white-space: nowrap;
 	}
 
 	.estado.con-datos {
-		color: #15803d;
-		background: rgba(21, 128, 61, 0.1);
+		color: var(--success);
+		background: var(--success-soft);
 	}
 
 	.estado.vacia {
-		color: #b45309;
-		background: rgba(180, 83, 9, 0.1);
+		color: var(--warning);
+		background: var(--warning-soft);
 	}
 
 	.estado.no-existe {
-		color: #9ca3af;
-		background: rgba(107, 114, 128, 0.06);
+		color: var(--muted-foreground);
+		background: var(--muted);
 	}
 
 	.convenciones {
-		margin-top: 2rem;
-		padding-top: 1.25rem;
-		border-top: 1px solid rgba(17, 24, 39, 0.08);
+		background: var(--card);
+		border: 2px solid var(--border);
+		border-radius: var(--radius-2xl);
+		padding: 1.25rem;
 	}
 
 	.convenciones h2 {
-		font-size: 0.95rem;
-		font-weight: 600;
-		color: #374151;
+		font-size: 0.875rem;
+		font-weight: 500;
 		margin: 0 0 0.6rem;
 	}
 
 	.convenciones ul {
 		margin: 0;
 		padding-left: 1.1rem;
-		color: #6b7280;
-		font-size: 0.82rem;
+		color: var(--muted-foreground);
+		font-size: 0.8125rem;
 		line-height: 1.7;
 	}
 </style>

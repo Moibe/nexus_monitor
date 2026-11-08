@@ -203,12 +203,13 @@
 </section>
 
 <style>
+	/* La tarjeta de sección de Biblioratum (`rounded-2xl border-2 border-border bg-card p-5`). El aire de afuera lo pone
+	   la columna de la página. */
 	.huerfanos {
-		margin: 0 0 1.75rem;
-		padding: 1rem 1.1rem 1.1rem;
-		background: rgba(17, 24, 39, 0.02);
-		border: 1px solid rgba(17, 24, 39, 0.08);
-		border-radius: 12px;
+		background: var(--card);
+		border: 2px solid var(--border);
+		border-radius: var(--radius-2xl);
+		padding: 1.25rem;
 	}
 
 	.encabezado {
@@ -220,50 +221,56 @@
 
 	h2 {
 		margin: 0 0 0.25rem;
-		font-size: 0.95rem;
+		font-size: 0.875rem;
+		font-weight: 500;
 	}
 
 	.explica {
 		margin: 0;
-		font-size: 0.8rem;
-		color: #6b7280;
+		font-size: 0.75rem;
+		line-height: 1.5;
+		color: var(--muted-foreground);
 	}
 
 	code {
-		font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-		font-size: 0.78rem;
-		color: #4b5563;
+		font-family: var(--font-mono);
+		font-size: 0.75rem;
+		color: var(--secondary-foreground);
 	}
 
 	.btn-buscar,
 	.btn-borrar {
+		height: 2.25rem;
+		padding: 0 1rem;
 		font: inherit;
-		font-size: 0.85rem;
-		font-weight: 600;
-		border-radius: 8px;
-		padding: 0.45rem 1rem;
+		font-size: 0.875rem;
+		font-weight: 500;
+		border: 1px solid transparent;
+		border-radius: var(--radius-md);
 		cursor: pointer;
 		white-space: nowrap;
+		transition:
+			background 0.15s ease,
+			opacity 0.15s ease;
 	}
 
 	.btn-buscar {
-		color: #ffffff;
-		background: #2563eb;
-		border: 1px solid #2563eb;
+		color: var(--primary-foreground);
+		background: var(--primary);
 	}
 
 	.btn-buscar:hover:not(:disabled) {
-		background: #1d4ed8;
+		background: var(--primary-hover);
 	}
 
+	/* El «destructive» de Biblioratum: rojo suave, no relleno. */
 	.btn-borrar {
-		color: #ffffff;
-		background: #b91c1c;
-		border: 1px solid #b91c1c;
+		color: var(--destructive);
+		background: var(--destructive-soft);
 	}
 
 	.btn-borrar:hover:not(:disabled) {
-		background: #991b1b;
+		background: var(--destructive-soft-hover);
 	}
 
 	.btn-buscar:disabled,
@@ -273,40 +280,40 @@
 	}
 
 	.error {
-		margin: 0.75rem 0 0;
-		font-size: 0.82rem;
-		color: #b91c1c;
-		background: rgba(185, 28, 28, 0.06);
-		border: 1px solid rgba(185, 28, 28, 0.2);
-		border-radius: 8px;
-		padding: 0.5rem 0.7rem;
+		margin: 0.85rem 0 0;
+		font-size: 0.8125rem;
+		color: var(--aviso-error-texto);
+		background: var(--aviso-error-fondo);
+		border: 1px solid var(--aviso-error-borde);
+		border-radius: var(--radius-lg);
+		padding: 0.6rem 0.8rem;
 	}
 
 	.aviso {
-		margin: 0.75rem 0 0;
-		font-size: 0.8rem;
-		color: #92400e;
-		background: rgba(180, 83, 9, 0.06);
-		border: 1px solid rgba(180, 83, 9, 0.18);
-		border-radius: 8px;
-		padding: 0.5rem 0.7rem;
+		margin: 0.85rem 0 0;
+		font-size: 0.8125rem;
+		color: var(--aviso-atencion-texto);
+		background: var(--aviso-atencion-fondo);
+		border: 1px solid var(--aviso-atencion-borde);
+		border-radius: var(--radius-lg);
+		padding: 0.6rem 0.8rem;
 	}
 
 	.resultado {
 		display: flex;
 		align-items: center;
 		gap: 0.4rem;
-		margin: 0.75rem 0 0;
-		font-size: 0.82rem;
-		color: #15803d;
-		background: rgba(21, 128, 61, 0.06);
-		border: 1px solid rgba(21, 128, 61, 0.2);
-		border-radius: 8px;
-		padding: 0.5rem 0.7rem;
+		margin: 0.85rem 0 0;
+		font-size: 0.8125rem;
+		color: var(--aviso-ok-texto);
+		background: var(--aviso-ok-fondo);
+		border: 1px solid var(--aviso-ok-borde);
+		border-radius: var(--radius-lg);
+		padding: 0.6rem 0.8rem;
 	}
 
 	.resultado .mal {
-		color: #b91c1c;
+		color: var(--aviso-error-texto);
 	}
 
 	.cerrar {
@@ -314,7 +321,7 @@
 		font: inherit;
 		font-size: 1rem;
 		line-height: 1;
-		color: #6b7280;
+		color: var(--muted-foreground);
 		background: none;
 		border: none;
 		cursor: pointer;
@@ -323,70 +330,75 @@
 	.conteos {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.4rem;
-		margin: 0.85rem 0 0;
+		gap: 0.5rem;
+		margin: 1rem 0 0;
 	}
 
 	.pastilla {
 		font-size: 0.75rem;
-		color: #6b7280;
-		background: rgba(17, 24, 39, 0.04);
-		border: 1px solid rgba(17, 24, 39, 0.1);
-		border-radius: 999px;
-		padding: 0.1rem 0.6rem;
+		font-weight: 500;
+		color: var(--muted-foreground);
+		background: var(--muted);
+		border-radius: var(--radius-sm);
+		padding: 0.125rem 0.5rem;
 	}
 
 	.pastilla.huerfano {
-		font-weight: 600;
-		color: #b91c1c;
-		background: rgba(185, 28, 28, 0.06);
-		border-color: rgba(185, 28, 28, 0.2);
+		color: var(--destructive);
+		background: var(--destructive-soft);
 	}
 
 	.vacio {
-		margin: 0.75rem 0 0;
-		font-size: 0.85rem;
-		color: #6b7280;
+		margin: 0.85rem 0 0;
+		font-size: 0.875rem;
+		color: var(--muted-foreground);
 	}
 
 	.tabla-wrap {
 		overflow-x: auto;
-		margin-top: 0.75rem;
+		margin-top: 1rem;
 	}
 
 	.tabla-huerfanos {
 		width: 100%;
 		border-collapse: collapse;
-		font-size: 0.82rem;
+		font-size: 0.875rem;
 	}
 
 	.tabla-huerfanos th {
 		text-align: left;
-		font-size: 0.68rem;
-		font-weight: 600;
-		letter-spacing: 0.03em;
-		text-transform: uppercase;
-		color: #6b7280;
-		padding: 0.4rem 0.6rem;
-		border-bottom: 1px solid rgba(17, 24, 39, 0.1);
+		font-size: 0.75rem;
+		font-weight: 400;
+		color: var(--muted-foreground);
+		padding: 0.625rem 1rem 0.625rem 0.5rem;
+		border-top: 1px solid var(--border);
+		border-bottom: 1px solid var(--border);
 	}
 
 	.tabla-huerfanos td {
-		padding: 0.4rem 0.6rem;
-		border-bottom: 1px solid rgba(17, 24, 39, 0.05);
+		padding: 0.65rem 1rem 0.65rem 0.5rem;
+		border-bottom: 1px solid var(--border);
+	}
+
+	.tabla-huerfanos tbody tr:last-child td {
+		border-bottom: none;
 	}
 
 	.col-check {
 		width: 1.5rem;
 	}
 
+	.col-check input {
+		accent-color: var(--primary);
+	}
+
 	.nombre {
-		font-weight: 600;
+		font-weight: 500;
 	}
 
 	.acciones {
 		display: flex;
 		justify-content: flex-end;
-		margin-top: 0.75rem;
+		margin-top: 1rem;
 	}
 </style>

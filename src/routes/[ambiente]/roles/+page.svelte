@@ -107,71 +107,84 @@
 </div>
 
 <style>
+	/* Una columna con aire parejo entre sus bloques (ver procesadores). */
 	.roles {
-		padding: 1.5rem 0.5rem 2.5rem;
+		display: flex;
+		flex-direction: column;
+		gap: 1.5rem;
 	}
 
 	.cabecera {
 		display: flex;
-		align-items: baseline;
+		align-items: center;
 		gap: 0.5rem;
-		margin-bottom: 1rem;
 	}
 
 	.cabecera h1 {
-		font-size: 1.4rem;
 		margin: 0;
+		font-size: 1.5rem;
+		font-weight: 600;
+		line-height: 2rem;
 	}
 
 	.total {
-		font-size: 0.85rem;
-		color: #6b7280;
-		background: rgba(37, 99, 235, 0.08);
-		border: 1px solid rgba(37, 99, 235, 0.18);
-		border-radius: 999px;
-		padding: 0.15rem 0.65rem;
+		font-size: 0.75rem;
+		font-weight: 500;
+		color: var(--muted-foreground);
+		background: var(--muted);
+		border-radius: var(--radius-sm);
+		padding: 0.125rem 0.5rem;
+	}
+
+	.cabecera + .nota {
+		margin-top: -1.125rem;
 	}
 
 	.nota {
-		font-size: 0.78rem;
-		color: #6b7280;
-		margin: 0 0 1.5rem;
+		font-size: 0.875rem;
+		color: var(--muted-foreground);
+		margin: 0;
 		max-width: 80ch;
-		line-height: 1.5;
+		line-height: 1.55;
 	}
 
 	.nota code,
 	.notas code {
-		font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+		font-family: var(--font-mono);
+		font-size: 0.8em;
 	}
 
+	/* La tarjeta del listado: la de «Listado de usuarios» de Biblioratum. */
 	.tabla-wrap {
 		overflow-x: auto;
+		background: var(--card);
+		border: 2px solid var(--border);
+		border-radius: var(--radius-2xl);
+		padding: 1.25rem;
 	}
 
 	.tabla-roles {
 		width: 100%;
-		border-collapse: separate;
-		border-spacing: 0 0.3rem;
-		font-size: 0.86rem;
+		border-collapse: collapse;
+		font-size: 0.875rem;
 	}
 
 	.tabla-roles thead th {
 		text-align: center;
-		font-size: 0.68rem;
-		font-weight: 600;
-		letter-spacing: 0.04em;
-		text-transform: uppercase;
-		color: #9ca3af;
-		padding: 0 0.2rem 0.5rem;
+		font-size: 0.75rem;
+		font-weight: 400;
+		color: var(--muted-foreground);
+		padding: 0.625rem 0.25rem;
 		line-height: 1.25;
 		vertical-align: bottom;
+		border-top: 1px solid var(--border);
+		border-bottom: 1px solid var(--border);
 	}
 
 	.tabla-roles thead th.col-que,
 	.tabla-roles thead th.col-estado {
 		text-align: left;
-		padding-left: 0.8rem;
+		padding-left: 0.5rem;
 	}
 
 	.col-rol {
@@ -179,49 +192,38 @@
 	}
 
 	.col-plataforma {
-		color: #6b7280;
+		color: var(--muted-foreground);
 	}
 
 	.fila-grupo th {
 		text-align: left;
-		font-size: 0.95rem;
+		font-size: 0.8125rem;
 		font-weight: 600;
-		color: #374151;
-		padding: 0.9rem 0.4rem 0.4rem;
-		border-bottom: 1px solid rgba(17, 24, 39, 0.08);
-	}
-
-	.fila-grupo:first-child th {
-		padding-top: 0.2rem;
+		color: var(--foreground);
+		background: var(--muted-soft);
+		padding: 0.55rem 0.5rem;
+		border-bottom: 1px solid var(--border);
 	}
 
 	.grupo-desc {
 		font-weight: 400;
-		font-size: 0.78rem;
-		color: #9ca3af;
+		font-size: 0.75rem;
+		color: var(--muted-foreground);
 		margin-left: 0.5rem;
 	}
 
 	.fila td {
-		padding: 0.55rem 0.2rem;
-		border-top: 1px solid rgba(17, 24, 39, 0.06);
-		border-bottom: 1px solid rgba(17, 24, 39, 0.06);
-		background: rgba(17, 24, 39, 0.015);
+		padding: 0.75rem 0.25rem;
+		border-bottom: 1px solid var(--border);
 		vertical-align: middle;
 	}
 
 	.fila td:first-child {
-		border-left: 1px solid rgba(17, 24, 39, 0.06);
-		border-top-left-radius: 10px;
-		border-bottom-left-radius: 10px;
-		padding-left: 0.8rem;
+		padding-left: 0.5rem;
 	}
 
 	.fila td:last-child {
-		border-right: 1px solid rgba(17, 24, 39, 0.06);
-		border-top-right-radius: 10px;
-		border-bottom-right-radius: 10px;
-		padding-right: 0.8rem;
+		padding-right: 0.5rem;
 	}
 
 	.col-que {
@@ -230,34 +232,35 @@
 	}
 
 	.nombre {
-		color: #1f2937;
+		color: var(--foreground);
 		font-weight: 500;
 	}
 
 	.detalle {
 		display: block;
 		font-size: 0.75rem;
-		color: #6b7280;
+		color: var(--muted-foreground);
 		margin-top: 0.15rem;
 		line-height: 1.4;
 	}
 
 	.decide {
 		display: block;
-		font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+		font-family: var(--font-mono);
 		font-size: 0.68rem;
-		color: #9ca3af;
+		color: var(--muted-foreground);
+		opacity: 0.85;
 		margin-top: 0.15rem;
 	}
 
 	.sin-pantalla {
 		margin-left: 0.4rem;
 		font-size: 0.68rem;
-		font-weight: 600;
-		color: #92400e;
-		background: rgba(180, 83, 9, 0.1);
-		border-radius: 6px;
-		padding: 0.05rem 0.4rem;
+		font-weight: 500;
+		color: var(--warning);
+		background: var(--warning-soft);
+		border-radius: var(--radius-sm);
+		padding: 0.1rem 0.4rem;
 		white-space: nowrap;
 	}
 
@@ -266,11 +269,11 @@
 	}
 
 	.celda.si {
-		background: rgba(21, 128, 61, 0.05);
+		background: rgba(21, 128, 61, 0.035);
 	}
 
 	.celda-plataforma {
-		border-left: 1px dashed rgba(17, 24, 39, 0.12);
+		border-left: 1px dashed var(--border);
 	}
 
 	.marca {
@@ -278,11 +281,11 @@
 	}
 
 	.marca.si {
-		color: #15803d;
+		color: var(--success);
 	}
 
 	.marca.no {
-		color: #d1d5db;
+		color: #cbd5e1;
 		font-weight: 400;
 	}
 
@@ -294,77 +297,81 @@
 	/* La etiqueta más larga («Propuesta, por confirmar con César») baja de renglón en vez de ensanchar la tabla. */
 	.estado {
 		display: inline-block;
-		font-size: 0.72rem;
-		font-weight: 600;
+		font-size: 0.75rem;
+		font-weight: 500;
 		line-height: 1.3;
-		border-radius: 6px;
-		padding: 0.1rem 0.4rem;
+		border-radius: var(--radius-sm);
+		padding: 0.125rem 0.5rem;
 	}
 
 	.estado.abierto {
-		color: #6b7280;
-		background: rgba(107, 114, 128, 0.08);
+		color: var(--muted-foreground);
+		background: var(--muted);
 	}
 
 	.estado.propuesta {
-		color: #b45309;
-		background: rgba(180, 83, 9, 0.1);
+		color: var(--warning);
+		background: var(--warning-soft);
 	}
 
 	.estado.diseno {
-		color: #1d4ed8;
-		background: rgba(37, 99, 235, 0.1);
+		color: var(--primary-strong);
+		background: var(--primary-soft);
 	}
 
 	.estado.decision {
-		color: #15803d;
-		background: rgba(21, 128, 61, 0.1);
+		color: var(--success);
+		background: var(--success-soft);
 	}
 
 	.notas {
-		margin-top: 2rem;
-		padding-top: 1.25rem;
-		border-top: 1px solid rgba(17, 24, 39, 0.08);
+		background: var(--card);
+		border: 2px solid var(--border);
+		border-radius: var(--radius-2xl);
+		padding: 1.25rem;
 	}
 
 	.notas h2 {
-		font-size: 0.95rem;
-		font-weight: 600;
-		color: #374151;
+		font-size: 0.875rem;
+		font-weight: 500;
 		margin: 0 0 0.6rem;
 	}
 
 	.notas ul {
 		margin: 0;
 		padding-left: 1.1rem;
-		color: #6b7280;
-		font-size: 0.82rem;
+		color: var(--muted-foreground);
+		font-size: 0.8125rem;
 		line-height: 1.7;
 		max-width: 90ch;
 	}
 
 	.roles-diseno {
 		margin: 0;
-		font-size: 0.82rem;
+		font-size: 0.8125rem;
 		line-height: 1.6;
 		max-width: 90ch;
 	}
 
 	.roles-diseno dt {
 		font-weight: 600;
-		color: #374151;
-		margin-top: 0.6rem;
+		color: var(--foreground);
+		margin-top: 0.75rem;
+	}
+
+	.roles-diseno dt:first-child {
+		margin-top: 0;
 	}
 
 	.roles-diseno dt code {
 		font-weight: 400;
 		font-size: 0.72rem;
-		color: #9ca3af;
+		color: var(--muted-foreground);
 		margin-left: 0.3rem;
 	}
 
 	.roles-diseno dd {
 		margin: 0;
-		color: #6b7280;
+		color: var(--muted-foreground);
 	}
 </style>
