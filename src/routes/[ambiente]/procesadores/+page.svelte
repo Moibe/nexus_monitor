@@ -8,6 +8,8 @@
 
 	let { data }: { data: PageData } = $props();
 
+	let verHuerfanos = $state(false);
+
 	let copiadoId = $state<string | null>(null);
 
 	async function copiarId(id: string) {
@@ -194,6 +196,22 @@
 		<h1>Procesadores de Document AI</h1>
 		{#if !data.error}
 			<span class="total">{data.total} vivos</span>
+			<!-- La limpieza de huérfanos va plegada: solo este ícono hasta que se pide. -->
+			<button
+				type="button"
+				class="btn-huerfanos"
+				class:abierto={verHuerfanos}
+				data-testid="abrir-huerfanos"
+				aria-expanded={verHuerfanos}
+				aria-label={verHuerfanos ? 'Ocultar huérfanos' : 'Buscar huérfanos'}
+				title={verHuerfanos ? 'Ocultar huérfanos' : 'Huérfanos'}
+				onclick={() => (verHuerfanos = !verHuerfanos)}
+			>
+				<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+					<circle cx="11" cy="11" r="7" />
+					<path d="m21 21-4.3-4.3" />
+				</svg>
+			</button>
 		{/if}
 	</header>
 
@@ -207,7 +225,9 @@
 			</p>
 		{/if}
 
-		<PanelHuerfanos onBorrados={invalidateAll} />
+		{#if verHuerfanos}
+			<PanelHuerfanos onBorrados={invalidateAll} />
+		{/if}
 	{/if}
 
 	{#if data.error}
@@ -381,6 +401,32 @@
 		background: var(--muted);
 		border-radius: var(--radius-sm);
 		padding: 0.125rem 0.5rem;
+	}
+
+	.btn-huerfanos {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 1.75rem;
+		height: 1.75rem;
+		padding: 0;
+		color: var(--muted-foreground);
+		background: var(--card);
+		border: 1px solid var(--border);
+		border-radius: var(--radius-md);
+		cursor: pointer;
+		transition: background 0.15s ease, color 0.15s ease;
+	}
+
+	.btn-huerfanos:hover {
+		background: var(--muted);
+		color: var(--foreground);
+	}
+
+	.btn-huerfanos.abierto {
+		color: var(--primary-foreground);
+		background: var(--primary);
+		border-color: var(--primary);
 	}
 
 	.error {
