@@ -1,5 +1,6 @@
 import { configDe } from '$lib/server/ambientes';
 import type { Ambiente } from '$lib/ambientes';
+import type { Ficha, Panorama } from '$lib/datos';
 
 // Monitor NO se conecta a SQL Server: le pregunta a nexus_back, que es quien
 // tiene las credenciales, el driver ODBC y la relación con el DBA. Así esas
@@ -143,6 +144,15 @@ async function llamar<T>(ambiente: Ambiente, metodo: string, ruta: string, cuerp
 	}
 	return json as T;
 }
+
+// ─── Datos extraídos (sección «Datos») ─────────────────────────────────────
+// `GET /monitor-datos/` de nexus_back: solo llave de servicio y solo lectura, pero SÍ trae datos de clientes. Quien los llame tiene
+// que pasar el resultado por `lib/server/enmascarar.ts` antes de mandarlo al navegador.
+
+export const panoramaDatos = (ambiente: Ambiente) => llamar<Panorama>(ambiente, 'GET', '/monitor-datos/');
+
+export const fichaDatos = (ambiente: Ambiente, documentoId: string) =>
+	llamar<Ficha>(ambiente, 'GET', `/monitor-datos/${encodeURIComponent(documentoId)}`);
 
 export const listarAdmins = (ambiente: Ambiente) =>
 	llamar<{ total: number; administradores: AdminPlataforma[] }>(ambiente, 'GET', '/admins-plataforma/');

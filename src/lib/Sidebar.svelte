@@ -35,6 +35,16 @@
       icono: ['M8 6h13', 'M8 12h13', 'M8 18h13', 'M3 6h.01', 'M3 12h.01', 'M3 18h.01']
     },
     {
+      // Un cilindro de base de datos: lo que Document AI leyó de cada documento.
+      href: '/datos',
+      etiqueta: 'Datos',
+      icono: [
+        'M12 3c4.97 0 9 1.34 9 3s-4.03 3-9 3-9-1.34-9-3 4.03-3 9-3z',
+        'M3 6v6c0 1.66 4.03 3 9 3s9-1.34 9-3V6',
+        'M3 12v6c0 1.66 4.03 3 9 3s9-1.34 9-3v-6'
+      ]
+    },
+    {
       // Un candado: quién puede entrar a qué.
       href: '/roles',
       etiqueta: 'Roles',
