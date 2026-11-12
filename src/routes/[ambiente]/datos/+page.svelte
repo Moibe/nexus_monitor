@@ -17,7 +17,12 @@
 	let filtroOrg = $state('');
 	let filtroTipo = $state('');
 	let busqueda = $state('');
+	// Activo = el tipo documental sigue existiendo; inactivo = se borró después de extraer (sus documentos se conservan).
+	let filtroEstadoTipo = $state<'' | 'activo' | 'inactivo'>('');
 	let abierto = $state<string | null>(null);
+
+	const pasaEstadoTipo = (existe: boolean | undefined) =>
+		!filtroEstadoTipo || (filtroEstadoTipo === 'activo' ? existe !== false : existe === false);
 
 	const p = $derived(data.panorama);
 	const nombreOrg = (o: Org) => o.nombre ?? `${o.guid.slice(0, 8)}…`;
@@ -31,7 +36,9 @@
 
 	const tiposDisponibles = $derived.by(() => {
 		const s = new Set<string>();
-		for (const d of p?.documentos ?? []) if (!filtroOrg || d.organizacion.guid === filtroOrg) s.add(d.tipoDocumental.nombre ?? d.tipoDocumental.id);
+		for (const d of p?.documentos ?? [])
+			if ((!filtroOrg || d.organizacion.guid === filtroOrg) && pasaEstadoTipo(d.tipoDocumental.existe))
+				s.add(d.tipoDocumental.nombre ?? d.tipoDocumental.id);
 		return [...s].sort((a, b) => a.localeCompare(b, 'es'));
 	});
 
@@ -41,13 +48,17 @@
 			(d) =>
 				(!filtroOrg || d.organizacion.guid === filtroOrg) &&
 				(!filtroTipo || (d.tipoDocumental.nombre ?? d.tipoDocumental.id) === filtroTipo) &&
+				pasaEstadoTipo(d.tipoDocumental.existe) &&
 				(!q || d.archivo.toLowerCase().includes(q) || d.id.includes(q))
 		);
 	});
 
 	const tipos = $derived(
 		(p?.tipos ?? []).filter(
-			(t) => (!filtroOrg || t.organizacion.guid === filtroOrg) && (!filtroTipo || (t.nombre ?? t.id) === filtroTipo)
+			(t) =>
+				(!filtroOrg || t.organizacion.guid === filtroOrg) &&
+				(!filtroTipo || (t.nombre ?? t.id) === filtroTipo) &&
+				pasaEstadoTipo(t.existe)
 		)
 	);
 
@@ -152,6 +163,11 @@
 						<option value="">Todos los tipos</option>
 						{#each tiposDisponibles as t (t)}<option value={t}>{t}</option>{/each}
 					</select>
+					<select bind:value={filtroEstadoTipo} onchange={() => (filtroTipo = '')} aria-label="Estado del tipo documental" data-testid="filtro-estado-tipo">
+						<option value="">Activos e inactivos</option>
+						<option value="activo">Solo tipos activos</option>
+						<option value="inactivo">Solo tipos inactivos (borrados)</option>
+					</select>
 					{#if vista === 'documentos'}
 						<input type="search" placeholder="Buscar archivo" bind:value={busqueda} aria-label="Buscar archivo" />
 					{/if}
@@ -205,7 +221,7 @@
 					{/if}
 				{/if}
 			{:else if tipos.length === 0}
-				<p class="vacio">No hay tipos documentales con datos extraídos{filtroOrg || filtroTipo ? ' con ese filtro' : ''}.</p>
+				<p class="vacio">No hay tipos documentales con datos extraídos{filtroOrg || filtroTipo || filtroEstadoTipo ? ' con ese filtro' : ''}.</p>
 			{:else}
 				<div class="tipos">
 					{#each tipos as t (t.organizacion.guid + t.id)}
