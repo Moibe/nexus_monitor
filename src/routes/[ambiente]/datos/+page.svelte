@@ -21,6 +21,25 @@
 	let filtroEstadoTipo = $state<'' | 'activo' | 'inactivo'>('');
 	let abierto = $state<string | null>(null);
 
+	// Lista o mosaico para «Documentos». Es una comodidad de quien mira: se guarda en este navegador y, si no se puede, arranca en lista.
+	const LLAVE_FORMATO = 'monitor.datos.formato';
+	let formato = $state<'lista' | 'mosaico'>('lista');
+	$effect(() => {
+		try {
+			if (localStorage.getItem(LLAVE_FORMATO) === 'mosaico') formato = 'mosaico';
+		} catch {
+			/* sin almacenamiento: se queda en lista */
+		}
+	});
+	function elegirFormato(f: 'lista' | 'mosaico') {
+		formato = f;
+		try {
+			localStorage.setItem(LLAVE_FORMATO, f);
+		} catch {
+			/* sin almacenamiento: dura lo que la página */
+		}
+	}
+
 	const pasaEstadoTipo = (existe: boolean | undefined) =>
 		!filtroEstadoTipo || (filtroEstadoTipo === 'activo' ? existe !== false : existe === false);
 
@@ -154,6 +173,17 @@
 						Por tipo documental
 					</button>
 				</div>
+				{#if vista === 'documentos'}
+					<!-- Lista o mosaico; se recuerda en este navegador. -->
+					<div class="formato" role="group" aria-label="Cómo enseñar los documentos">
+						<button type="button" class:activa={formato === 'lista'} aria-pressed={formato === 'lista'} title="Lista" aria-label="Lista" onclick={() => elegirFormato('lista')}>
+							<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" /></svg>
+						</button>
+						<button type="button" class:activa={formato === 'mosaico'} aria-pressed={formato === 'mosaico'} title="Mosaico" aria-label="Mosaico" data-testid="formato-mosaico" onclick={() => elegirFormato('mosaico')}>
+							<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5" /><rect x="14" y="3" width="7" height="7" rx="1.5" /><rect x="3" y="14" width="7" height="7" rx="1.5" /><rect x="14" y="14" width="7" height="7" rx="1.5" /></svg>
+						</button>
+					</div>
+				{/if}
 				<div class="filtros">
 					<select bind:value={filtroOrg} onchange={() => (filtroTipo = '')} aria-label="Organización">
 						<option value="">Todas las organizaciones</option>
@@ -177,6 +207,44 @@
 			{#if vista === 'documentos'}
 				{#if documentos.length === 0}
 					<p class="vacio">{p.documentos.length === 0 ? 'Todavía no hay documentos extraídos en este ambiente.' : 'Ningún documento coincide con el filtro.'}</p>
+				{:else if formato === 'mosaico'}
+					<div class="mosaico">
+						{#each documentos as d (d.id)}
+							<button
+								type="button"
+								class="tarjeta-doc"
+								class:seleccionada={abierto === d.id}
+								class:tipo-borrado={d.tipoDocumental.existe === false}
+								onclick={() => (abierto = d.id)}
+								data-testid="tarjeta-documento"
+							>
+								<span class="tarjeta-top">
+									<span class="icono-doc {nivelDe(d.confianzaPromedio)}" aria-hidden="true">
+										<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" /><path d="M14 3v5h5" /><path d="M9 13h6M9 17h4" /></svg>
+									</span>
+									<span class="estado {d.estado}" title={d.error ?? ''}>{ETIQUETA_ESTADO[d.estado]}</span>
+								</span>
+								<span class="tarjeta-tipo">
+									{d.tipoDocumental.nombre ?? d.tipoDocumental.id}
+									{#if d.tipoDocumental.existe === false}<span class="borrado">ya no existe</span>{/if}
+								</span>
+								<span class="tarjeta-archivo" title={d.archivo}>{d.archivo}</span>
+								<span class="sub">{nombreOrg(d.organizacion)}</span>
+								<span class="tarjeta-barras">
+									<span class="tarjeta-fila"><span class="sub">Confianza</span>{@render barraConfianza(d.confianzaPromedio, d.confianzaMinima)}</span>
+									<span class="tarjeta-fila"><span class="sub">Campos</span>{@render completitud(d)}</span>
+								</span>
+								<span class="tarjeta-pie sub">
+									{d.extraidoEn ? formatFecha(d.extraidoEn) : '—'}
+									{#if d.paginas}· {d.paginas} pág.{/if}
+									{#if d.corregidos}· <span class="manual">{d.corregidos} a mano</span>{/if}
+								</span>
+							</button>
+						{/each}
+					</div>
+					{#if p.limite && p.documentos.length >= p.limite}
+						<p class="sub pie">Se enseñan los {p.limite} más recientes.</p>
+					{/if}
 				{:else}
 					<div class="tabla-wrap">
 						<table class="tabla">
@@ -427,6 +495,137 @@
 		color: var(--foreground);
 		background: var(--card);
 		box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+	}
+
+	/* El selector lista/mosaico: el mismo molde que las pestañas, con íconos. */
+	.formato {
+		display: inline-flex;
+		gap: 0.2rem;
+		margin-right: auto;
+		margin-left: 0.5rem;
+		padding: 0.2rem;
+		background: var(--muted);
+		border-radius: var(--radius-lg);
+	}
+
+	.formato button {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 2rem;
+		height: 1.85rem;
+		padding: 0;
+		color: var(--muted-foreground);
+		background: none;
+		border: none;
+		border-radius: var(--radius-md);
+		cursor: pointer;
+	}
+
+	.formato button.activa {
+		color: var(--foreground);
+		background: var(--card);
+		box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+	}
+
+	/* Mosaico: una tarjeta por documento. */
+	.mosaico {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(15.5rem, 1fr));
+		gap: 0.85rem;
+	}
+
+	.tarjeta-doc {
+		display: flex;
+		flex-direction: column;
+		gap: 0.35rem;
+		min-width: 0;
+		padding: 0.9rem 1rem;
+		font: inherit;
+		color: var(--foreground);
+		text-align: left;
+		background: var(--card);
+		border: 1px solid var(--border);
+		border-radius: var(--radius-xl);
+		cursor: pointer;
+		transition:
+			border-color 0.15s ease,
+			box-shadow 0.15s ease;
+	}
+
+	.tarjeta-doc:hover,
+	.tarjeta-doc.seleccionada {
+		border-color: var(--primary-line);
+		box-shadow: 0 4px 12px -4px rgba(66, 104, 251, 0.25);
+	}
+
+	.tarjeta-doc.tipo-borrado {
+		background: var(--muted-soft);
+		border-style: dashed;
+	}
+
+	.tarjeta-top {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		margin-bottom: 0.25rem;
+	}
+
+	.icono-doc {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 2.25rem;
+		height: 2.25rem;
+		border-radius: var(--radius-md);
+		color: var(--muted-foreground);
+		background: var(--muted);
+	}
+
+	.icono-doc.alta {
+		color: var(--success);
+		background: var(--success-soft);
+	}
+	.icono-doc.media {
+		color: var(--warning);
+		background: var(--warning-soft);
+	}
+	.icono-doc.baja {
+		color: var(--destructive);
+		background: var(--destructive-soft);
+	}
+
+	.tarjeta-tipo {
+		font-size: 0.95rem;
+		font-weight: 600;
+	}
+
+	.tarjeta-archivo {
+		font-size: 0.8125rem;
+		color: var(--secondary-foreground);
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.tarjeta-barras {
+		display: flex;
+		flex-direction: column;
+		gap: 0.3rem;
+		margin-top: 0.4rem;
+		padding-top: 0.6rem;
+		border-top: 1px solid var(--border);
+	}
+
+	.tarjeta-fila {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.5rem;
+	}
+
+	.tarjeta-pie {
+		margin-top: 0.3rem;
 	}
 
 	.filtros {
