@@ -110,6 +110,7 @@
 					<div class="dato-resumen">
 						<span class="etq">Tipo documental</span>
 						<strong>{ficha.corridas[0]?.tipoDocumental.nombre ?? '—'}</strong>
+						{#if ficha.corridas[0]?.tipoDocumental.existe === false}<span class="sub borrado">ya no existe</span>{/if}
 					</div>
 					<div class="dato-resumen">
 						<span class="etq">Confianza</span>
@@ -363,6 +364,10 @@
 	.sub {
 		font-size: 0.75rem;
 		color: var(--muted-foreground);
+	}
+
+	.borrado {
+		color: var(--destructive);
 	}
 
 	.conf-txt.alta {

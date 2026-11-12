@@ -2,7 +2,8 @@
 // Módulo UNIVERSAL (tipos y utilidades de presentación); el enmascarado de producción vive en `lib/server/enmascarar.ts`.
 
 export type Org = { guid: string; nombre: string | null };
-export type TipoRef = { id: string; nombre: string | null; revision?: number | null };
+/** `existe: false` = el tipo se borró después de extraer; la corrida conserva su id y nombre de entonces. */
+export type TipoRef = { id: string; nombre: string | null; revision?: number | null; existe?: boolean };
 export type EstadoCorrida = 'ok' | 'no_reconocido' | 'error';
 
 export type DocumentoResumen = {
@@ -40,6 +41,7 @@ export type CampoDeTipo = {
 export type TipoResumen = {
 	id: string;
 	nombre: string | null;
+	existe?: boolean;
 	organizacion: Org;
 	documentos: number;
 	confianzaPromedio: number | null;

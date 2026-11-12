@@ -187,7 +187,10 @@
 											</span>
 										</td>
 										<td>{nombreOrg(d.organizacion)}</td>
-										<td>{d.tipoDocumental.nombre ?? d.tipoDocumental.id}</td>
+										<td>
+											{d.tipoDocumental.nombre ?? d.tipoDocumental.id}
+											{#if d.tipoDocumental.existe === false}<span class="borrado" title={`El tipo ${d.tipoDocumental.id} se borró después de extraer este documento`}>ya no existe</span>{/if}
+										</td>
 										<td>{@render barraConfianza(d.confianzaPromedio, d.confianzaMinima)}</td>
 										<td>{@render completitud(d)}</td>
 										<td><span class="estado {d.estado}" title={d.error ?? ''}>{ETIQUETA_ESTADO[d.estado]}</span></td>
@@ -206,10 +209,13 @@
 			{:else}
 				<div class="tipos">
 					{#each tipos as t (t.organizacion.guid + t.id)}
-						<article class="tipo" data-testid="tarjeta-tipo">
+						<article class="tipo" class:tipo-borrado={t.existe === false} data-testid="tarjeta-tipo">
 							<header class="tipo-cabeza">
 								<div>
-									<h2>{t.nombre ?? t.id}</h2>
+									<h2>
+										{t.nombre ?? t.id}
+										{#if t.existe === false}<span class="borrado" title={`El tipo ${t.id} se borró; sus documentos extraídos se conservan`}>ya no existe</span>{/if}
+									</h2>
 									<p class="sub">{nombreOrg(t.organizacion)} · {t.documentos} documento{t.documentos === 1 ? '' : 's'} · {t.campos.length} campos</p>
 								</div>
 								<div class="tipo-conf">{@render barraConfianza(t.confianzaPromedio, null)}</div>
@@ -656,6 +662,24 @@
 
 	.col-campo {
 		font-weight: 500;
+	}
+
+	/* Un tipo documental borrado: sus extracciones son historia y se quedan, pero se avisa. */
+	.borrado {
+		margin-left: 0.4rem;
+		font-size: 0.68rem;
+		font-weight: 500;
+		color: var(--destructive);
+		background: var(--destructive-soft);
+		border-radius: var(--radius-sm);
+		padding: 0.05rem 0.4rem;
+		white-space: nowrap;
+		vertical-align: middle;
+	}
+
+	.tipo-borrado {
+		background: var(--muted-soft);
+		border-style: dashed;
 	}
 
 	.repite {
