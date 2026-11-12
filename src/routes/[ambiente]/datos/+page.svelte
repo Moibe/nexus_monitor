@@ -7,7 +7,7 @@
 	import { page } from '$app/state';
 	import { formatFecha } from '$lib/procesadores';
 	import { ETIQUETA_ESTADO, etiquetaDe, nivelDe, type DocumentoResumen, type Org } from '$lib/datos';
-	import FichaDocumento from '$lib/FichaDocumento.svelte';
+	import { goto } from '$app/navigation';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
@@ -19,7 +19,8 @@
 	let busqueda = $state('');
 	// Activo = el tipo documental sigue existiendo; inactivo = se borró después de extraer (sus documentos se conservan).
 	let filtroEstadoTipo = $state<'' | 'activo' | 'inactivo'>('');
-	let abierto = $state<string | null>(null);
+	// Cada documento abre su ficha en su propia página.
+	const enlace = (id: string) => `/${ambiente}/datos/${id}`;
 
 	// Lista o mosaico para «Documentos». Es una comodidad de quien mira: se guarda en este navegador y, si no se puede, arranca en lista.
 	const LLAVE_FORMATO = 'monitor.datos.formato';
@@ -210,12 +211,10 @@
 				{:else if formato === 'mosaico'}
 					<div class="mosaico">
 						{#each documentos as d (d.id)}
-							<button
-								type="button"
+							<a
 								class="tarjeta-doc"
-								class:seleccionada={abierto === d.id}
 								class:tipo-borrado={d.tipoDocumental.existe === false}
-								onclick={() => (abierto = d.id)}
+								href={enlace(d.id)}
 								data-testid="tarjeta-documento"
 							>
 								<span class="tarjeta-top">
@@ -239,7 +238,7 @@
 									{#if d.paginas}· {d.paginas} pág.{/if}
 									{#if d.corregidos}· <span class="manual">{d.corregidos} a mano</span>{/if}
 								</span>
-							</button>
+							</a>
 						{/each}
 					</div>
 					{#if p.limite && p.documentos.length >= p.limite}
@@ -261,9 +260,9 @@
 							</thead>
 							<tbody>
 								{#each documentos as d (d.id)}
-									<tr class="fila" class:seleccionada={abierto === d.id} onclick={() => (abierto = d.id)} data-testid="fila-documento">
+									<tr class="fila" onclick={() => goto(enlace(d.id))} data-testid="fila-documento">
 										<td class="col-doc">
-											<button type="button" class="abrir" onclick={(e) => { e.stopPropagation(); abierto = d.id; }}>{d.archivo}</button>
+											<a class="abrir" href={enlace(d.id)} onclick={(e) => e.stopPropagation()}>{d.archivo}</a>
 											<span class="sub">
 												{d.paginas ? `${d.paginas} pág.` : ''}
 												{#if d.corridas > 1}· {d.corridas} extracciones{/if}
@@ -340,7 +339,6 @@
 	{/if}
 </div>
 
-<FichaDocumento {ambiente} id={abierto} onCerrar={() => (abierto = null)} />
 
 <style>
 	.datos {
@@ -544,6 +542,7 @@
 		font: inherit;
 		color: var(--foreground);
 		text-align: left;
+		text-decoration: none;
 		background: var(--card);
 		border: 1px solid var(--border);
 		border-radius: var(--radius-xl);
@@ -553,8 +552,7 @@
 			box-shadow 0.15s ease;
 	}
 
-	.tarjeta-doc:hover,
-	.tarjeta-doc.seleccionada {
+	.tarjeta-doc:hover {
 		border-color: var(--primary-line);
 		box-shadow: 0 4px 12px -4px rgba(66, 104, 251, 0.25);
 	}
@@ -694,8 +692,7 @@
 		transition: background 0.12s ease;
 	}
 
-	.fila:hover,
-	.fila.seleccionada {
+	.fila:hover {
 		background: var(--muted-soft);
 	}
 
@@ -711,6 +708,7 @@
 		font-weight: 500;
 		color: var(--foreground);
 		text-align: left;
+		text-decoration: none;
 		background: none;
 		border: none;
 		cursor: pointer;
