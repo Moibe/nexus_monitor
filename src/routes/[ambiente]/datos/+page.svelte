@@ -6,21 +6,46 @@
 	// En producción los valores llegan ya enmascarados del servidor (ver `lib/server/enmascarar.ts`).
 	import { page } from '$app/state';
 	import { formatFecha } from '$lib/procesadores';
-	import { ETIQUETA_ESTADO, etiquetaDe, nivelDe, type DocumentoResumen, type Org } from '$lib/datos';
-	import { goto } from '$app/navigation';
+	import {
+		ETIQUETA_ESTADO,
+		consultaDe,
+		etiquetaDe,
+		filtrarDocumentos,
+		filtrosDeUrl,
+		nivelDe,
+		pasaEstadoTipo as pasaEstado,
+		type DocumentoResumen,
+		type EstadoTipo,
+		type Org
+	} from '$lib/datos';
+	import { goto, replaceState } from '$app/navigation';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
 
 	const ambiente = $derived(page.params.ambiente ?? 'dev');
 	let vista = $state<'documentos' | 'tipos'>('documentos');
-	let filtroOrg = $state('');
-	let filtroTipo = $state('');
-	let busqueda = $state('');
-	// Activo = el tipo documental sigue existiendo; inactivo = se borró después de extraer (sus documentos se conservan).
-	let filtroEstadoTipo = $state<'' | 'activo' | 'inactivo'>('');
-	// Cada documento abre su ficha en su propia página.
-	const enlace = (id: string) => `/${ambiente}/datos/${id}`;
+	// Los filtros viven en la dirección (`?org=…&tipo=…&estado=…&q=…`): al volver de una ficha siguen puestos, y la ficha los usa para
+	// sus flechas de anterior y siguiente.
+	const inicial = filtrosDeUrl(page.url.searchParams);
+	let filtroOrg = $state(inicial.org);
+	let filtroTipo = $state(inicial.tipo);
+	let busqueda = $state(inicial.q);
+	let filtroEstadoTipo = $state<EstadoTipo>(inicial.estado);
+	const filtros = $derived({ org: filtroOrg, tipo: filtroTipo, estado: filtroEstadoTipo, q: busqueda });
+	const consulta = $derived(consultaDe(filtros));
+	$effect(() => {
+		const nueva = `${page.url.pathname}${consulta}`;
+		if (nueva !== `${page.url.pathname}${page.url.search}`) {
+			try {
+				replaceState(nueva, page.state);
+			} catch {
+				/* el enrutador aún no arranca: la dirección se pone al siguiente cambio */
+			}
+		}
+	});
+	// Cada documento abre su ficha en su propia página, con los filtros para que sus flechas recorran lo mismo que se ve aquí.
+	const enlace = (id: string) => `/${ambiente}/datos/${id}${consulta}`;
 
 	// Lista o mosaico para «Documentos». Es una comodidad de quien mira: se guarda en este navegador y, si no se puede, arranca en lista.
 	const LLAVE_FORMATO = 'monitor.datos.formato';
@@ -41,8 +66,7 @@
 		}
 	}
 
-	const pasaEstadoTipo = (existe: boolean | undefined) =>
-		!filtroEstadoTipo || (filtroEstadoTipo === 'activo' ? existe !== false : existe === false);
+	const pasaEstadoTipo = (existe: boolean | undefined) => pasaEstado(filtroEstadoTipo, existe);
 
 	const p = $derived(data.panorama);
 	const nombreOrg = (o: Org) => o.nombre ?? `${o.guid.slice(0, 8)}…`;
@@ -62,16 +86,7 @@
 		return [...s].sort((a, b) => a.localeCompare(b, 'es'));
 	});
 
-	const documentos = $derived.by(() => {
-		const q = busqueda.trim().toLowerCase();
-		return (p?.documentos ?? []).filter(
-			(d) =>
-				(!filtroOrg || d.organizacion.guid === filtroOrg) &&
-				(!filtroTipo || (d.tipoDocumental.nombre ?? d.tipoDocumental.id) === filtroTipo) &&
-				pasaEstadoTipo(d.tipoDocumental.existe) &&
-				(!q || d.archivo.toLowerCase().includes(q) || d.id.includes(q))
-		);
-	});
+	const documentos = $derived(filtrarDocumentos(p?.documentos ?? [], filtros));
 
 	const tipos = $derived(
 		(p?.tipos ?? []).filter(

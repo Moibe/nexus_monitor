@@ -13,7 +13,8 @@
 		type Ficha
 	} from '$lib/datos';
 
-	let { ambiente, ficha }: { ambiente: string; ficha: Ficha } = $props();
+	/** `volverA`: a dónde lleva «‹ Datos extraídos» (la lista con los filtros que traía). */
+	let { ambiente, ficha, volverA }: { ambiente: string; ficha: Ficha; volverA?: string } = $props();
 
 	const secciones = $derived(seccionesDe(ficha.campos));
 	const conValor = $derived(ficha.campos.filter((c) => c.valor !== null).length);
@@ -45,7 +46,7 @@
 
 <article class="ficha" data-testid="ficha-documento">
 	<header class="cabeza">
-		<a class="volver" href="/{ambiente}/datos" data-testid="volver-a-datos">
+		<a class="volver" href={volverA ?? `/${ambiente}/datos`} data-testid="volver-a-datos">
 			<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6" /></svg>
 			Datos extraídos
 		</a>
