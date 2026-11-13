@@ -189,12 +189,14 @@ export function formatoBytes(n: number): string {
 	return `${(n / 1024 / 1024).toFixed(1)} MB`;
 }
 
-// ── Filtros de «Documentos», compartidos por la lista y por la ficha (para que las flechas de la ficha sigan el mismo orden) ──────────
-// Viajan en la dirección (`?org=…&tipo=…&estado=…&q=…`): así la lista los conserva al regresar y la ficha sabe cuál es el anterior y
-// el siguiente.
+// ── Filtros y orden de «Documentos», compartidos por la lista y por la ficha (para que las flechas de la ficha sigan el mismo orden) ──
+// Viajan en la dirección (`?org=…&tipo=…&estado=…&q=…&orden=antiguos`): así la lista los conserva al regresar y la ficha sabe cuál es
+// el anterior y el siguiente.
 
 export type EstadoTipo = '' | 'activo' | 'inactivo';
-export type FiltrosDocumentos = { org: string; tipo: string; estado: EstadoTipo; q: string };
+/** Por la fecha de la extracción vigente (la que se ve en la lista); sin ella, por la de recepción. */
+export type OrdenFecha = 'recientes' | 'antiguos';
+export type FiltrosDocumentos = { org: string; tipo: string; estado: EstadoTipo; q: string; orden: OrdenFecha };
 
 export function filtrosDeUrl(sp: URLSearchParams): FiltrosDocumentos {
 	const estado = sp.get('estado');
@@ -202,32 +204,45 @@ export function filtrosDeUrl(sp: URLSearchParams): FiltrosDocumentos {
 		org: sp.get('org') ?? '',
 		tipo: sp.get('tipo') ?? '',
 		estado: estado === 'activo' || estado === 'inactivo' ? estado : '',
-		q: sp.get('q') ?? ''
+		q: sp.get('q') ?? '',
+		orden: sp.get('orden') === 'antiguos' ? 'antiguos' : 'recientes'
 	};
 }
 
-/** `?org=…` con solo los filtros puestos, o `''` si no hay ninguno. */
+/** `?org=…` con solo los filtros puestos (el orden, solo si no es el de siempre), o `''` si no hay ninguno. */
 export function consultaDe(f: FiltrosDocumentos): string {
 	const sp = new URLSearchParams();
 	if (f.org) sp.set('org', f.org);
 	if (f.tipo) sp.set('tipo', f.tipo);
 	if (f.estado) sp.set('estado', f.estado);
 	if (f.q.trim()) sp.set('q', f.q.trim());
+	if (f.orden === 'antiguos') sp.set('orden', 'antiguos');
 	const s = sp.toString();
 	return s ? `?${s}` : '';
 }
+
+const fechaDe = (d: DocumentoResumen) => {
+	const t = Date.parse(d.extraidoEn ?? d.recibidoEn ?? '');
+	return Number.isNaN(t) ? null : t;
+};
 
 /** Activo = el tipo documental sigue existiendo; inactivo = se borró después de extraer (sus documentos se conservan). */
 export const pasaEstadoTipo = (estado: EstadoTipo, existe: boolean | undefined) =>
 	!estado || (estado === 'activo' ? existe !== false : existe === false);
 
+/** Filtra y ordena por fecha. Los que no tienen fecha van al final en los dos sentidos; los empates conservan el orden del back. */
 export function filtrarDocumentos(docs: DocumentoResumen[], f: FiltrosDocumentos): DocumentoResumen[] {
 	const q = f.q.trim().toLowerCase();
-	return docs.filter(
-		(d) =>
-			(!f.org || d.organizacion.guid === f.org) &&
-			(!f.tipo || (d.tipoDocumental.nombre ?? d.tipoDocumental.id) === f.tipo) &&
-			pasaEstadoTipo(f.estado, d.tipoDocumental.existe) &&
-			(!q || d.archivo.toLowerCase().includes(q) || d.id.includes(q))
-	);
+	const sentido = f.orden === 'antiguos' ? 1 : -1;
+	return docs
+		.filter(
+			(d) =>
+				(!f.org || d.organizacion.guid === f.org) &&
+				(!f.tipo || (d.tipoDocumental.nombre ?? d.tipoDocumental.id) === f.tipo) &&
+				pasaEstadoTipo(f.estado, d.tipoDocumental.existe) &&
+				(!q || d.archivo.toLowerCase().includes(q) || d.id.includes(q))
+		)
+		.map((d) => ({ d, t: fechaDe(d) }))
+		.sort((a, b) => (a.t === null ? (b.t === null ? 0 : 1) : b.t === null ? -1 : (a.t - b.t) * sentido))
+		.map(({ d }) => d);
 }

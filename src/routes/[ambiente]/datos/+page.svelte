@@ -16,6 +16,7 @@
 		pasaEstadoTipo as pasaEstado,
 		type DocumentoResumen,
 		type EstadoTipo,
+		type OrdenFecha,
 		type Org
 	} from '$lib/datos';
 	import { goto, replaceState } from '$app/navigation';
@@ -25,14 +26,15 @@
 
 	const ambiente = $derived(page.params.ambiente ?? 'dev');
 	let vista = $state<'documentos' | 'tipos'>('documentos');
-	// Los filtros viven en la dirección (`?org=…&tipo=…&estado=…&q=…`): al volver de una ficha siguen puestos, y la ficha los usa para
-	// sus flechas de anterior y siguiente.
+	// Los filtros y el orden viven en la dirección (`?org=…&tipo=…&estado=…&q=…&orden=…`): al volver de una ficha siguen puestos, y la
+	// ficha los usa para sus flechas de anterior y siguiente.
 	const inicial = filtrosDeUrl(page.url.searchParams);
 	let filtroOrg = $state(inicial.org);
 	let filtroTipo = $state(inicial.tipo);
 	let busqueda = $state(inicial.q);
 	let filtroEstadoTipo = $state<EstadoTipo>(inicial.estado);
-	const filtros = $derived({ org: filtroOrg, tipo: filtroTipo, estado: filtroEstadoTipo, q: busqueda });
+	let orden = $state<OrdenFecha>(inicial.orden);
+	const filtros = $derived({ org: filtroOrg, tipo: filtroTipo, estado: filtroEstadoTipo, q: busqueda, orden });
 	const consulta = $derived(consultaDe(filtros));
 	$effect(() => {
 		const nueva = `${page.url.pathname}${consulta}`;
@@ -215,6 +217,10 @@
 						<option value="inactivo">Solo tipos inactivos (borrados)</option>
 					</select>
 					{#if vista === 'documentos'}
+						<select bind:value={orden} aria-label="Ordenar por fecha" data-testid="orden-fecha">
+							<option value="recientes">Más recientes primero</option>
+							<option value="antiguos">Más antiguos primero</option>
+						</select>
 						<input type="search" placeholder="Buscar archivo" bind:value={busqueda} aria-label="Buscar archivo" />
 					{/if}
 				</div>
@@ -270,7 +276,20 @@
 									<th>Confianza</th>
 									<th>Campos</th>
 									<th>Estado</th>
-									<th>Extraído</th>
+									<th aria-sort={orden === 'recientes' ? 'descending' : 'ascending'}>
+										<button
+											type="button"
+											class="ordenar"
+											title={orden === 'recientes' ? 'Poner los más antiguos primero' : 'Poner los más recientes primero'}
+											onclick={() => (orden = orden === 'recientes' ? 'antiguos' : 'recientes')}
+											data-testid="ordenar-extraido"
+										>
+											Extraído
+											<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+												<path d={orden === 'recientes' ? 'M12 5v14M19 12l-7 7-7-7' : 'M12 19V5M5 12l7-7 7 7'} />
+											</svg>
+										</button>
+									</th>
 								</tr>
 							</thead>
 							<tbody>
@@ -690,6 +709,28 @@
 		border-top: 1px solid var(--border);
 		border-bottom: 1px solid var(--border);
 		white-space: nowrap;
+	}
+
+	/* El encabezado «Extraído» es también el botón del orden. */
+	.ordenar {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.3rem;
+		padding: 0;
+		font: inherit;
+		color: var(--foreground);
+		font-weight: 500;
+		background: none;
+		border: none;
+		cursor: pointer;
+	}
+
+	.ordenar svg {
+		color: var(--primary);
+	}
+
+	.ordenar:hover {
+		color: var(--primary);
 	}
 
 	.tabla td {
