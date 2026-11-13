@@ -294,9 +294,11 @@
 							</thead>
 							<tbody>
 								{#each documentos as d (d.id)}
-									<tr class="fila" onclick={() => goto(enlace(d.id))} data-testid="fila-documento">
+									<!-- Toda la fila abre la ficha. Un clic en el enlace lo atiende el enlace (sin stopPropagation: eso le escondía el
+									     clic al enrutador de SvelteKit y recargaba la página entera). -->
+									<tr class="fila" onclick={(e) => (e.target as HTMLElement).closest('a') || goto(enlace(d.id))} data-testid="fila-documento">
 										<td class="col-doc">
-											<a class="abrir" href={enlace(d.id)} onclick={(e) => e.stopPropagation()}>{d.archivo}</a>
+											<a class="abrir" href={enlace(d.id)}>{d.archivo}</a>
 											<span class="sub">
 												{d.paginas ? `${d.paginas} pág.` : ''}
 												{#if d.corridas > 1}· {d.corridas} extracciones{/if}
