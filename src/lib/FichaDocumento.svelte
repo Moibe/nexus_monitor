@@ -88,7 +88,9 @@
 	<div class="resumen">
 		<div class="dato-resumen">
 			<span class="etq">Tipo documental</span>
-			<strong>{vigente?.tipoDocumental.nombre ?? '—'}</strong>
+			<strong class:tipo-vigente={vigente?.tipoDocumental.nombre && vigente.tipoDocumental.existe !== false}>
+				{vigente?.tipoDocumental.nombre ?? '—'}
+			</strong>
 			{#if vigente?.tipoDocumental.existe === false}<span class="sub borrado">ya no existe</span>
 			{:else if vigente?.tipoDocumental.revision != null}<span class="sub">revisión {vigente.tipoDocumental.revision}</span>{/if}
 		</div>
@@ -291,6 +293,12 @@
 
 	.borrado {
 		color: var(--destructive);
+	}
+
+	/* El nombre del tipo documental va en verde (Moibe, 2026-11-13). Si el tipo se borró se queda en el color normal: abajo dice
+	   «ya no existe» en rojo y el verde lo contradiría. */
+	.dato-resumen strong.tipo-vigente {
+		color: var(--success);
 	}
 
 	.conf-txt.alta {
