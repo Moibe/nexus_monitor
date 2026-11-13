@@ -70,7 +70,15 @@ export type CampoFicha = {
 	corregido: boolean;
 	corregidoEn: string | null;
 	corregidoPor: string | null;
+	/** La corrida de la que sale el dato (la vigente). */
+	corridaId?: string;
 };
+
+/**
+ * Una fila de un grupo que se repite que Document AI entregó partida y la extracción volvió a unir (nexus_back,
+ * `servicios/filas_partidas.py`): `fila` es la que quedó, `de` las que había entregado Google y `por` los campos que las reconocieron.
+ */
+export type FilaUnida = { grupo: string; fila: number; de: number[]; por: string[] };
 
 export type Corrida = {
 	id: string;
@@ -84,6 +92,7 @@ export type Corrida = {
 	terminadaEn: string | null;
 	extraidoPor: string;
 	campos: number;
+	filasUnidas?: FilaUnida[];
 };
 
 export type Ficha = {
@@ -134,7 +143,7 @@ export function etiquetaDe(nombre: string): string {
 
 export type SeccionFicha =
 	| { tipo: 'simple'; titulo: string; campos: (CampoFicha & { etiqueta: string })[] }
-	| { tipo: 'tabla'; titulo: string; columnas: string[]; filas: { indice: number; celdas: Record<string, CampoFicha> }[] };
+	| { tipo: 'tabla'; titulo: string; raiz: string; columnas: string[]; filas: { indice: number; celdas: Record<string, CampoFicha> }[] };
 
 /**
  * Acomoda los campos de una ficha como se leen en papel: los sueltos juntos («Generales»), los de un grupo bajo su nombre
@@ -177,6 +186,7 @@ export function seccionesDe(campos: CampoFicha[]): SeccionFicha[] {
 		secciones.push({
 			tipo: 'tabla',
 			titulo: etiquetaDe(raiz),
+			raiz,
 			columnas: t.columnas,
 			filas: [...t.filas.entries()].sort((a, b) => a[0] - b[0]).map(([indice, celdas]) => ({ indice, celdas }))
 		});

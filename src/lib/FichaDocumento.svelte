@@ -6,11 +6,13 @@
 	import {
 		ETIQUETA_ESTADO,
 		MOTIVO_SIN_VALOR,
+		etiquetaDe,
 		formatoBytes,
 		nivelDe,
 		seccionesDe,
 		type CampoFicha,
-		type Ficha
+		type Ficha,
+		type FilaUnida
 	} from '$lib/datos';
 
 	/** `volverA`: a dónde lleva «‹ Datos extraídos» (la lista con los filtros que traía). */
@@ -19,7 +21,26 @@
 	const secciones = $derived(seccionesDe(ficha.campos));
 	const conValor = $derived(ficha.campos.filter((c) => c.valor !== null).length);
 	const vigente = $derived(ficha.corridas[0]);
+
+	// Las filas que Document AI entregó partidas y la extracción volvió a unir (un accionista en dos pedazos): las dice la corrida de la
+	// que salen los campos, que es la última que terminó (no siempre la más reciente: esa pudo fallar).
+	const corridaDeLosCampos = $derived(
+		ficha.corridas.find((r) => r.id === ficha.campos[0]?.corridaId) ?? ficha.corridas.find((r) => r.estado !== 'error')
+	);
+	const filasUnidas = $derived(corridaDeLosCampos?.filasUnidas ?? []);
+	const unidaEn = (grupo: string, fila: number) => filasUnidas.find((u) => u.grupo === grupo && u.fila === fila);
+	const listaY = (xs: (string | number)[]) => (xs.length <= 1 ? xs.join('') : `${xs.slice(0, -1).join(', ')} y ${xs[xs.length - 1]}`);
+	const PEDAZOS = ['', 'un pedazo', 'dos pedazos', 'tres pedazos', 'cuatro pedazos'];
+	const explicarUnion = (u: FilaUnida) =>
+		`Document AI la entregó en ${PEDAZOS[u.de.length] ?? `${u.de.length} pedazos`} (sus filas ${listaY(u.de)})` +
+		(u.por.length ? ` y se unieron por ${listaY(u.por.map((p) => `«${etiquetaDe(p)}»`))}.` : ' y se unieron.');
 </script>
+
+{#snippet iconoUnida()}
+	<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+		<path d="m8 6 4-4 4 4" /><path d="M12 2v10.3a4 4 0 0 1-1.172 2.872L4 22" /><path d="m20 22-5-5" />
+	</svg>
+{/snippet}
 
 {#snippet valor(c: CampoFicha, grande: boolean)}
 	{#if c.valor === null}
@@ -126,8 +147,12 @@
 						</thead>
 						<tbody>
 							{#each s.filas as f (f.indice)}
+								{@const unida = unidaEn(s.raiz, f.indice)}
 								<tr>
-									<td class="col-n">{f.indice}</td>
+									<td class="col-n">
+										{f.indice}
+										{#if unida}<span class="marca-unida" title={explicarUnion(unida)} data-testid="fila-unida">{@render iconoUnida()}</span>{/if}
+									</td>
 									{#each s.columnas as col (col)}
 										{@const c = f.celdas[col]}
 										<td>
@@ -146,6 +171,9 @@
 						</tbody>
 					</table>
 				</div>
+				{#each filasUnidas.filter((u) => u.grupo === s.raiz) as u (u.fila)}
+					<p class="nota-unida" data-testid="nota-fila-unida">{@render iconoUnida()}<span><strong>Fila {u.fila}:</strong> {explicarUnion(u)}</span></p>
+				{/each}
 			{/if}
 		</section>
 	{/each}
@@ -164,7 +192,9 @@
 							{#if r.confianzaPromedio != null}<span class="conf {nivelDe(r.confianzaPromedio)}">{Math.round(r.confianzaPromedio)}%</span>{/if}
 						</p>
 						<p class="sub">
-							{r.terminadaEn ? formatFecha(r.terminadaEn) : '—'} · {r.campos} campos · procesador <code>{r.procesador.id}</code>
+							{r.terminadaEn ? formatFecha(r.terminadaEn) : '—'} · {r.campos} campos
+							{#if r.filasUnidas?.length}· {r.filasUnidas.length} fila{r.filasUnidas.length === 1 ? '' : 's'} unida{r.filasUnidas.length === 1 ? '' : 's'}{/if}
+							· procesador <code>{r.procesador.id}</code>
 							· {r.extraidoPor}
 						</p>
 						{#if r.error}<p class="corrida-error">{r.error}</p>{/if}
@@ -419,10 +449,55 @@
 		white-space: nowrap;
 	}
 
+	/* Cada columna con un ancho mínimo y las palabras enteras: si no caben todas, la tabla se desplaza a lo ancho en vez de partir
+	   «divorcia / do» o «$200,000.0 / 0». */
 	.tabla-campos td {
+		min-width: 8rem;
 		padding: 0.5rem 0.65rem;
 		border-bottom: 1px solid var(--border);
 		vertical-align: top;
+	}
+
+	.tabla-campos td.col-n {
+		min-width: 0;
+		white-space: nowrap;
+	}
+
+	.tabla-campos .valor {
+		overflow-wrap: break-word;
+	}
+
+	.tabla-campos .sin-valor {
+		white-space: nowrap;
+	}
+
+	/* Una fila que Document AI entregó partida y se volvió a unir. */
+	.marca-unida {
+		display: inline-flex;
+		margin-left: 0.2rem;
+		vertical-align: -0.1rem;
+		color: var(--primary);
+		cursor: help;
+	}
+
+	.nota-unida {
+		display: flex;
+		align-items: flex-start;
+		gap: 0.4rem;
+		margin: 0.6rem 0 0;
+		font-size: 0.75rem;
+		color: var(--muted-foreground);
+	}
+
+	.nota-unida :global(svg) {
+		flex-shrink: 0;
+		margin-top: 0.1rem;
+		color: var(--primary);
+	}
+
+	.nota-unida strong {
+		font-weight: 600;
+		color: var(--foreground);
 	}
 
 	.tabla-campos tbody tr:last-child td {
