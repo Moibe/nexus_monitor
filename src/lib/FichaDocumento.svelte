@@ -96,7 +96,7 @@
 		</div>
 		<div class="dato-resumen">
 			<span class="etq">Confianza</span>
-			<strong class="conf-txt {nivelDe(ficha.extraccion?.confianzaPromedio)}">
+			<strong>
 				{ficha.extraccion?.confianzaPromedio != null ? `${Math.round(ficha.extraccion.confianzaPromedio)}%` : '—'}
 			</strong>
 			{#if ficha.extraccion?.confianzaMinima != null}<span class="sub">mín. {Math.round(ficha.extraccion.confianzaMinima)}%</span>{/if}
@@ -300,16 +300,8 @@
 	.dato-resumen strong.tipo-vigente {
 		color: var(--success);
 	}
-
-	.conf-txt.alta {
-		color: var(--success);
-	}
-	.conf-txt.media {
-		color: var(--warning);
-	}
-	.conf-txt.baja {
-		color: var(--destructive);
-	}
+	/* La confianza del resumen va en el color normal, sin el verde/ámbar/rojo de su nivel (Moibe, 2026-11-13); el nivel sigue
+	   marcado campo por campo. */
 
 	/* Cada sección (Generales, un grupo, una tabla de lo que se repite), en la tarjeta de sección de Biblioratum. */
 	.seccion {
