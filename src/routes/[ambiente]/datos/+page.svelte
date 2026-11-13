@@ -311,7 +311,12 @@
 										<td>{@render barraConfianza(d.confianzaPromedio, d.confianzaMinima)}</td>
 										<td>{@render completitud(d)}</td>
 										<td><span class="estado {d.estado}" title={d.error ?? ''}>{ETIQUETA_ESTADO[d.estado]}</span></td>
-										<td class="col-fecha">{d.extraidoEn ? formatFecha(d.extraidoEn) : '—'}</td>
+										<td class="col-fecha">
+											{#if d.extraidoEn}
+												{@const [dia, ...hora] = formatFecha(d.extraidoEn).split(', ')}
+												<span>{dia}{hora.length ? ',' : ''}</span>{#if hora.length}{' '}<span>{hora.join(', ')}</span>{/if}
+											{:else}—{/if}
+										</td>
 									</tr>
 								{/each}
 							</tbody>
@@ -786,9 +791,13 @@
 		margin: 0.75rem 0 0;
 	}
 
+	/* Día y hora no se parten por dentro; si falta ancho, la hora baja al segundo renglón en vez de cortarse. */
 	.col-fecha {
-		white-space: nowrap;
 		color: var(--muted-foreground);
+	}
+
+	.col-fecha span {
+		white-space: nowrap;
 	}
 
 	.sin-dato {
