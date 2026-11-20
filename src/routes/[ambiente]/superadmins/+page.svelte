@@ -782,6 +782,14 @@
 		border-bottom: 1px solid var(--border);
 	}
 
+	/* Rol, estado y fecha en un renglón: con la columna de «Retirar» se partían («Admin de / organización»). El nombre y la
+	   organización sí pueden bajar de renglón, y si aun así no cabe, la tarjeta se desplaza a lo ancho. */
+	.tabla-creados td:nth-child(3),
+	.tabla-creados td:nth-child(5),
+	.tabla-creados td:nth-child(6) {
+		white-space: nowrap;
+	}
+
 	.tabla-creados tbody tr:last-child td {
 		border-bottom: none;
 	}
