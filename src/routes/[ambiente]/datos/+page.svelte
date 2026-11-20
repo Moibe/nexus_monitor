@@ -20,6 +20,7 @@
 		type DocumentoResumen,
 		type EstadoTipo,
 		type Ficha,
+		type FormatoDocumentos,
 		type OrdenFecha,
 		type Org,
 		type VistaDatos
@@ -30,16 +31,22 @@
 	let { data }: { data: PageData } = $props();
 
 	const ambiente = $derived(page.params.ambiente ?? 'dev');
-	// La pestaña, los filtros y el orden viven en la dirección (`?vista=documentos&org=…&tipo=…&estado=…&q=…&orden=…`): al volver de
-	// una ficha siguen puestos, y la ficha los usa para sus flechas de anterior y siguiente. Sin `vista` se abre «Por tipo documental».
+	// La pestaña, el formato, los filtros y el orden viven en la dirección (`?vista=documentos&formato=lista&org=…&tipo=…&estado=…&q=…
+	// &orden=…`): al volver de una ficha siguen puestos, y la ficha los usa para sus flechas de anterior y siguiente. Sin `vista` se abre
+	// «Por tipo documental».
 	const inicial = filtrosDeUrl(page.url.searchParams);
 	let vista = $state<VistaDatos>(inicial.vista);
+	// Amplio, lista o mosaico para «Documentos». «Amplio» (Moibe, 2026-11-20) es una tarjeta a todo lo ancho por documento con los datos
+	// que se le extrajeron, y es con el que se entra («que el modo amplio sea el default en documentos»). Antes el formato se recordaba
+	// en el navegador; ahora va en la dirección, para que lo recordado no le gane al de entrada y al volver de una ficha se regrese a
+	// como se estaba viendo.
+	let formato = $state<FormatoDocumentos>(inicial.formato);
 	let filtroOrg = $state(inicial.org);
 	let filtroTipo = $state(inicial.tipo);
 	let busqueda = $state(inicial.q);
 	let filtroEstadoTipo = $state<EstadoTipo>(inicial.estado);
 	let orden = $state<OrdenFecha>(inicial.orden);
-	const filtros = $derived({ vista, org: filtroOrg, tipo: filtroTipo, estado: filtroEstadoTipo, q: busqueda, orden });
+	const filtros = $derived({ vista, formato, org: filtroOrg, tipo: filtroTipo, estado: filtroEstadoTipo, q: busqueda, orden });
 	const consulta = $derived(consultaDe(filtros));
 	$effect(() => {
 		const nueva = `${page.url.pathname}${consulta}`;
@@ -54,26 +61,8 @@
 	// Cada documento abre su ficha en su propia página, con los filtros para que sus flechas recorran lo mismo que se ve aquí.
 	const enlace = (id: string) => `/${ambiente}/datos/${id}${consulta}`;
 
-	// Lista, mosaico o amplio para «Documentos». Es una comodidad de quien mira: se guarda en este navegador y, si no se puede, arranca en
-	// lista. «Amplio» (Moibe, 2026-11-20) es una tarjeta a todo lo ancho por documento con los datos que se le extrajeron.
-	type Formato = 'lista' | 'mosaico' | 'amplio';
-	const LLAVE_FORMATO = 'monitor.datos.formato';
-	let formato = $state<Formato>('lista');
-	$effect(() => {
-		try {
-			const guardado = localStorage.getItem(LLAVE_FORMATO);
-			if (guardado === 'mosaico' || guardado === 'amplio') formato = guardado;
-		} catch {
-			/* sin almacenamiento: se queda en lista */
-		}
-	});
-	function elegirFormato(f: Formato) {
+	function elegirFormato(f: FormatoDocumentos) {
 		formato = f;
-		try {
-			localStorage.setItem(LLAVE_FORMATO, f);
-		} catch {
-			/* sin almacenamiento: dura lo que la página */
-		}
 	}
 
 	// ── Modo amplio: los datos de cada documento ────────────────────────────────────────────────────────────────────────────────
@@ -346,7 +335,7 @@
 					</button>
 				</div>
 				{#if vista === 'documentos'}
-					<!-- Lista, mosaico o amplio; se recuerda en este navegador. -->
+					<!-- Lista, mosaico o amplio (el de entrada); el elegido viaja en la dirección. -->
 					<div class="formato" role="group" aria-label="Cómo enseñar los documentos">
 						<button type="button" class:activa={formato === 'lista'} aria-pressed={formato === 'lista'} title="Lista" aria-label="Lista" onclick={() => elegirFormato('lista')}>
 							<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" /></svg>
