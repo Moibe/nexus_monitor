@@ -1,8 +1,8 @@
 <script lang="ts">
 	// «Datos»: lo que Document AI leyó de cada documento (Moibe, 2026-11-11). Dos miradas sobre lo mismo:
-	//   Documentos — uno por renglón, con su confianza y cuántos de sus campos salieron; al abrirlo, su ficha (FichaDocumento).
 	//   Por tipo documental — cómo le va a cada campo de cada tipo: cuántas veces sale, cuánto falta, con qué confianza. Sirve para
-	//   afinar tipos y no enseña a ninguna persona.
+	//   afinar tipos y no enseña a ninguna persona. Es la pestaña de entrada (Moibe, 2026-11-20).
+	//   Documentos — uno por renglón, con su confianza y cuántos de sus campos salieron; al abrirlo, su ficha (FichaDocumento).
 	// En producción los valores llegan ya enmascarados del servidor (ver `lib/server/enmascarar.ts`).
 	import { page } from '$app/state';
 	import { formatFecha } from '$lib/procesadores';
@@ -17,7 +17,8 @@
 		type DocumentoResumen,
 		type EstadoTipo,
 		type OrdenFecha,
-		type Org
+		type Org,
+		type VistaDatos
 	} from '$lib/datos';
 	import { goto, replaceState } from '$app/navigation';
 	import type { PageData } from './$types';
@@ -25,16 +26,16 @@
 	let { data }: { data: PageData } = $props();
 
 	const ambiente = $derived(page.params.ambiente ?? 'dev');
-	let vista = $state<'documentos' | 'tipos'>('documentos');
-	// Los filtros y el orden viven en la dirección (`?org=…&tipo=…&estado=…&q=…&orden=…`): al volver de una ficha siguen puestos, y la
-	// ficha los usa para sus flechas de anterior y siguiente.
+	// La pestaña, los filtros y el orden viven en la dirección (`?vista=documentos&org=…&tipo=…&estado=…&q=…&orden=…`): al volver de
+	// una ficha siguen puestos, y la ficha los usa para sus flechas de anterior y siguiente. Sin `vista` se abre «Por tipo documental».
 	const inicial = filtrosDeUrl(page.url.searchParams);
+	let vista = $state<VistaDatos>(inicial.vista);
 	let filtroOrg = $state(inicial.org);
 	let filtroTipo = $state(inicial.tipo);
 	let busqueda = $state(inicial.q);
 	let filtroEstadoTipo = $state<EstadoTipo>(inicial.estado);
 	let orden = $state<OrdenFecha>(inicial.orden);
-	const filtros = $derived({ org: filtroOrg, tipo: filtroTipo, estado: filtroEstadoTipo, q: busqueda, orden });
+	const filtros = $derived({ vista, org: filtroOrg, tipo: filtroTipo, estado: filtroEstadoTipo, q: busqueda, orden });
 	const consulta = $derived(consultaDe(filtros));
 	$effect(() => {
 		const nueva = `${page.url.pathname}${consulta}`;
@@ -184,11 +185,11 @@
 		<div class="listado">
 			<div class="barra-herramientas">
 				<div class="pestanas" role="tablist">
-					<button type="button" role="tab" aria-selected={vista === 'documentos'} class:activa={vista === 'documentos'} onclick={() => (vista = 'documentos')}>
-						Documentos
-					</button>
 					<button type="button" role="tab" aria-selected={vista === 'tipos'} class:activa={vista === 'tipos'} onclick={() => (vista = 'tipos')} data-testid="vista-tipos">
 						Por tipo documental
+					</button>
+					<button type="button" role="tab" aria-selected={vista === 'documentos'} class:activa={vista === 'documentos'} onclick={() => (vista = 'documentos')} data-testid="vista-documentos">
+						Documentos
 					</button>
 				</div>
 				{#if vista === 'documentos'}

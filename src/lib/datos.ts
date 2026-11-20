@@ -200,17 +200,21 @@ export function formatoBytes(n: number): string {
 }
 
 // ── Filtros y orden de «Documentos», compartidos por la lista y por la ficha (para que las flechas de la ficha sigan el mismo orden) ──
-// Viajan en la dirección (`?org=…&tipo=…&estado=…&q=…&orden=antiguos`): así la lista los conserva al regresar y la ficha sabe cuál es
-// el anterior y el siguiente.
+// Viajan en la dirección (`?vista=documentos&org=…&tipo=…&estado=…&q=…&orden=antiguos`): así la lista los conserva al regresar y la
+// ficha sabe cuál es el anterior y el siguiente.
 
 export type EstadoTipo = '' | 'activo' | 'inactivo';
 /** Por la fecha de la extracción vigente (la que se ve en la lista); sin ella, por la de recepción. */
 export type OrdenFecha = 'recientes' | 'antiguos';
-export type FiltrosDocumentos = { org: string; tipo: string; estado: EstadoTipo; q: string; orden: OrdenFecha };
+/** Qué pestaña de «Datos» se ve. «Por tipo documental» es la de entrada (Moibe, 2026-11-20); «Documentos» va en la dirección
+ *  (`?vista=documentos`) para que al volver de una ficha se regrese a la lista de donde se abrió. */
+export type VistaDatos = 'tipos' | 'documentos';
+export type FiltrosDocumentos = { vista: VistaDatos; org: string; tipo: string; estado: EstadoTipo; q: string; orden: OrdenFecha };
 
 export function filtrosDeUrl(sp: URLSearchParams): FiltrosDocumentos {
 	const estado = sp.get('estado');
 	return {
+		vista: sp.get('vista') === 'documentos' ? 'documentos' : 'tipos',
 		org: sp.get('org') ?? '',
 		tipo: sp.get('tipo') ?? '',
 		estado: estado === 'activo' || estado === 'inactivo' ? estado : '',
@@ -219,9 +223,10 @@ export function filtrosDeUrl(sp: URLSearchParams): FiltrosDocumentos {
 	};
 }
 
-/** `?org=…` con solo los filtros puestos (el orden, solo si no es el de siempre), o `''` si no hay ninguno. */
+/** `?org=…` con solo los filtros puestos (la vista y el orden, solo si no son los de siempre), o `''` si no hay ninguno. */
 export function consultaDe(f: FiltrosDocumentos): string {
 	const sp = new URLSearchParams();
+	if (f.vista === 'documentos') sp.set('vista', 'documentos');
 	if (f.org) sp.set('org', f.org);
 	if (f.tipo) sp.set('tipo', f.tipo);
 	if (f.estado) sp.set('estado', f.estado);
