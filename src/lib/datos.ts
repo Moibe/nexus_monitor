@@ -193,6 +193,27 @@ export function seccionesDe(campos: CampoFicha[]): SeccionFicha[] {
 	return secciones;
 }
 
+/**
+ * Para el modo amplio de «Documentos» (Moibe, 2026-11-20: «que se muestre qué datos se extrajeron de cada documento»): las secciones de
+ * la ficha con SOLO lo que salió, y los nombres de lo que faltó, para decirlos en un renglón en vez de ocupar una casilla cada uno.
+ * Una tabla de lo que se repite se queda entera (sus huecos se ven como «—»), salvo que no traiga ni un valor.
+ */
+export function datosExtraidos(campos: CampoFicha[]): { secciones: SeccionFicha[]; faltan: string[] } {
+	const secciones: SeccionFicha[] = [];
+	const faltan: string[] = [];
+	for (const s of seccionesDe(campos)) {
+		if (s.tipo === 'tabla') {
+			if (s.filas.some((f) => Object.values(f.celdas).some((c) => c.valor !== null))) secciones.push(s);
+			else faltan.push(s.titulo);
+			continue;
+		}
+		for (const c of s.campos) if (c.valor === null) faltan.push(s.titulo === 'Generales' ? c.etiqueta : `${s.titulo} › ${c.etiqueta}`);
+		const conValor = s.campos.filter((c) => c.valor !== null);
+		if (conValor.length) secciones.push({ ...s, campos: conValor });
+	}
+	return { secciones, faltan };
+}
+
 export function formatoBytes(n: number): string {
 	if (n < 1024) return `${n} B`;
 	if (n < 1024 * 1024) return `${(n / 1024).toFixed(0)} KB`;

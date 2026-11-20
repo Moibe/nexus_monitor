@@ -5,17 +5,21 @@
 	//   Documentos — uno por renglón, con su confianza y cuántos de sus campos salieron; al abrirlo, su ficha (FichaDocumento).
 	// En producción los valores llegan ya enmascarados del servidor (ver `lib/server/enmascarar.ts`).
 	import { page } from '$app/state';
+	import { SvelteMap, SvelteSet } from 'svelte/reactivity';
 	import { formatFecha } from '$lib/procesadores';
 	import {
 		ETIQUETA_ESTADO,
 		consultaDe,
+		datosExtraidos,
 		etiquetaDe,
 		filtrarDocumentos,
 		filtrosDeUrl,
 		nivelDe,
 		pasaEstadoTipo as pasaEstado,
+		type CampoFicha,
 		type DocumentoResumen,
 		type EstadoTipo,
+		type Ficha,
 		type OrdenFecha,
 		type Org,
 		type VistaDatos
@@ -50,17 +54,20 @@
 	// Cada documento abre su ficha en su propia página, con los filtros para que sus flechas recorran lo mismo que se ve aquí.
 	const enlace = (id: string) => `/${ambiente}/datos/${id}${consulta}`;
 
-	// Lista o mosaico para «Documentos». Es una comodidad de quien mira: se guarda en este navegador y, si no se puede, arranca en lista.
+	// Lista, mosaico o amplio para «Documentos». Es una comodidad de quien mira: se guarda en este navegador y, si no se puede, arranca en
+	// lista. «Amplio» (Moibe, 2026-11-20) es una tarjeta a todo lo ancho por documento con los datos que se le extrajeron.
+	type Formato = 'lista' | 'mosaico' | 'amplio';
 	const LLAVE_FORMATO = 'monitor.datos.formato';
-	let formato = $state<'lista' | 'mosaico'>('lista');
+	let formato = $state<Formato>('lista');
 	$effect(() => {
 		try {
-			if (localStorage.getItem(LLAVE_FORMATO) === 'mosaico') formato = 'mosaico';
+			const guardado = localStorage.getItem(LLAVE_FORMATO);
+			if (guardado === 'mosaico' || guardado === 'amplio') formato = guardado;
 		} catch {
 			/* sin almacenamiento: se queda en lista */
 		}
 	});
-	function elegirFormato(f: 'lista' | 'mosaico') {
+	function elegirFormato(f: Formato) {
 		formato = f;
 		try {
 			localStorage.setItem(LLAVE_FORMATO, f);
@@ -68,6 +75,75 @@
 			/* sin almacenamiento: dura lo que la página */
 		}
 	}
+
+	// ── Modo amplio: los datos de cada documento ────────────────────────────────────────────────────────────────────────────────
+	// La lista no trae los campos (son de la ficha, `GET /api/{ambiente}/datos/{id}`, que en producción ya llega enmascarada). Se piden
+	// por documento cuando su tarjeta se acerca a la pantalla, cuatro a la vez como mucho: la lista puede traer 300 y nadie los ve todos.
+	// Lo leído se guarda mientras la página siga abierta; la llave cambia si el documento se vuelve a extraer o se corrige, y entonces
+	// se vuelve a pedir.
+	type DatosDeDocumento = { estado: 'cargando' } | { estado: 'ok'; ficha: Ficha } | { estado: 'error'; mensaje: string };
+	const datosDe = new SvelteMap<string, DatosDeDocumento>();
+	const claveDe = (d: DocumentoResumen) => `${ambiente}|${d.id}|${d.extraidoEn ?? ''}|${d.corregidos}`;
+	const A_LA_VEZ = 4;
+	const pendientes: DocumentoResumen[] = [];
+	let pidiendo = 0;
+
+	function pedirDatos(d: DocumentoResumen) {
+		if (datosDe.has(claveDe(d))) return;
+		datosDe.set(claveDe(d), { estado: 'cargando' });
+		pendientes.push(d);
+		despachar();
+	}
+
+	function despachar() {
+		while (pidiendo < A_LA_VEZ && pendientes.length) {
+			const d = pendientes.shift()!;
+			pidiendo++;
+			leerDatos(d).finally(() => {
+				pidiendo--;
+				despachar();
+			});
+		}
+	}
+
+	async function leerDatos(d: DocumentoResumen) {
+		const clave = claveDe(d);
+		try {
+			const r = await fetch(`/api/${ambiente}/datos/${d.id}`);
+			if (!r.ok) {
+				const cuerpo = await r.json().catch(() => null);
+				datosDe.set(clave, { estado: 'error', mensaje: (cuerpo?.message as string | undefined) ?? `Error ${r.status} al leer sus datos.` });
+				return;
+			}
+			datosDe.set(clave, { estado: 'ok', ficha: (await r.json()) as Ficha });
+		} catch {
+			datosDe.set(clave, { estado: 'error', mensaje: 'No se pudo contactar a Monitor.' });
+		}
+	}
+
+	/** Lo que faltó se nombra en un renglón; si son muchos (un reporte de siniestro deja 60), los primeros y «y N más». */
+	const FALTAN_A_LA_VISTA = 10;
+	const faltanAbiertos = new SvelteSet<string>();
+
+	function reintentar(d: DocumentoResumen) {
+		datosDe.delete(claveDe(d));
+		pedirDatos(d);
+	}
+
+	/** Pide los datos de un documento cuando su tarjeta llega a 600 px de la pantalla. */
+	const alAcercarse = (d: DocumentoResumen) => (nodo: HTMLElement) => {
+		const observador = new IntersectionObserver(
+			(entradas) => {
+				if (entradas.some((e) => e.isIntersecting)) {
+					observador.disconnect();
+					pedirDatos(d);
+				}
+			},
+			{ rootMargin: '600px 0px' }
+		);
+		observador.observe(nodo);
+		return () => observador.disconnect();
+	};
 
 	const pasaEstadoTipo = (existe: boolean | undefined) => pasaEstado(filtroEstadoTipo, existe);
 
@@ -145,6 +221,83 @@
 	{/if}
 {/snippet}
 
+<!-- Modo amplio: junto a un dato solo se avisa lo que merece una segunda mirada (confianza media o baja, o corregido a mano); la
+     confianza exacta de cada uno está en la ficha. -->
+{#snippet marcaDato(c: CampoFicha)}
+	{#if c.corregido}
+		<span class="dato-marca a-mano" title={`Corregido${c.corregidoPor ? ` por ${c.corregidoPor}` : ''} · extraído: ${c.valorExtraido ?? '—'}`}>a mano</span>
+	{:else if c.confianza !== null && nivelDe(c.confianza) !== 'alta'}
+		<span class="dato-marca {nivelDe(c.confianza)}" title="Confianza de Document AI">{Math.round(c.confianza)}%</span>
+	{/if}
+{/snippet}
+
+{#snippet datosDelDocumento(d: DocumentoResumen)}
+	{@const leido = datosDe.get(claveDe(d))}
+	{#if !leido || leido.estado === 'cargando'}
+		<p class="amplio-aviso" data-testid="datos-cargando">Leyendo sus datos…</p>
+	{:else if leido.estado === 'error'}
+		<p class="amplio-aviso mal">
+			{leido.mensaje}
+			<button type="button" class="reintentar" onclick={() => reintentar(d)}>Reintentar</button>
+		</p>
+	{:else if leido.ficha.campos.length === 0}
+		<p class="amplio-aviso">{d.estado === 'error' && d.error ? `La extracción falló: ${d.error}` : 'Esta extracción no dejó campos.'}</p>
+	{:else}
+		{@const extraido = datosExtraidos(leido.ficha.campos)}
+		{#each extraido.secciones as s (s.titulo)}
+			<section class="grupo-datos">
+				{#if extraido.secciones.length > 1 || s.titulo !== 'Generales'}<h3>{s.titulo}</h3>{/if}
+				{#if s.tipo === 'simple'}
+					<dl class="rejilla-datos">
+						{#each s.campos as c (c.ruta)}
+							<div class="dato" data-testid="dato-extraido">
+								<dt><span class="dato-etq" title={c.ruta}>{c.etiqueta}</span>{@render marcaDato(c)}</dt>
+								<dd title={c.valor}>{c.valor}</dd>
+							</div>
+						{/each}
+					</dl>
+				{:else}
+					<div class="tabla-datos-wrap">
+						<table class="tabla-datos">
+							<thead>
+								<tr>
+									<th class="n">#</th>
+									{#each s.columnas as col (col)}<th>{col}</th>{/each}
+								</tr>
+							</thead>
+							<tbody>
+								{#each s.filas as f (f.indice)}
+									<tr>
+										<td class="n">{f.indice}</td>
+										{#each s.columnas as col (col)}
+											{@const c = f.celdas[col]}
+											<td>
+												{#if c && c.valor !== null}
+													<span class="celda-valor" title={c.valor}>{c.valor}</span>{@render marcaDato(c)}
+												{:else}
+													<span class="sin-dato">—</span>
+												{/if}
+											</td>
+										{/each}
+									</tr>
+								{/each}
+							</tbody>
+						</table>
+					</div>
+				{/if}
+			</section>
+		{/each}
+		{#if extraido.faltan.length}
+			{@const completos = faltanAbiertos.has(d.id) || extraido.faltan.length <= FALTAN_A_LA_VISTA}
+			<p class="faltaron" data-testid="datos-faltaron">
+				<span>Sin valor ({extraido.faltan.length}):</span>
+				{(completos ? extraido.faltan : extraido.faltan.slice(0, FALTAN_A_LA_VISTA)).join(' · ')}
+				{#if !completos}<button type="button" class="ver-mas" onclick={() => faltanAbiertos.add(d.id)}>y {extraido.faltan.length - FALTAN_A_LA_VISTA} más</button>{/if}
+			</p>
+		{/if}
+	{/if}
+{/snippet}
+
 <div class="datos">
 	<header class="cabecera">
 		<h1>Datos extraídos</h1>
@@ -193,13 +346,16 @@
 					</button>
 				</div>
 				{#if vista === 'documentos'}
-					<!-- Lista o mosaico; se recuerda en este navegador. -->
+					<!-- Lista, mosaico o amplio; se recuerda en este navegador. -->
 					<div class="formato" role="group" aria-label="Cómo enseñar los documentos">
 						<button type="button" class:activa={formato === 'lista'} aria-pressed={formato === 'lista'} title="Lista" aria-label="Lista" onclick={() => elegirFormato('lista')}>
 							<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" /></svg>
 						</button>
 						<button type="button" class:activa={formato === 'mosaico'} aria-pressed={formato === 'mosaico'} title="Mosaico" aria-label="Mosaico" data-testid="formato-mosaico" onclick={() => elegirFormato('mosaico')}>
 							<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5" /><rect x="14" y="3" width="7" height="7" rx="1.5" /><rect x="3" y="14" width="7" height="7" rx="1.5" /><rect x="14" y="14" width="7" height="7" rx="1.5" /></svg>
+						</button>
+						<button type="button" class:activa={formato === 'amplio'} aria-pressed={formato === 'amplio'} title="Amplio: con los datos que se extrajeron" aria-label="Amplio" data-testid="formato-amplio" onclick={() => elegirFormato('amplio')}>
+							<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M3 9h18" /><path d="M7 13h4M7 17h4M14 13h3M14 17h3" /></svg>
 						</button>
 					</div>
 				{/if}
@@ -261,6 +417,40 @@
 									{#if d.corregidos}· <span class="manual">{d.corregidos} a mano</span>{/if}
 								</span>
 							</a>
+						{/each}
+					</div>
+					{#if p.limite && p.documentos.length >= p.limite}
+						<p class="sub pie">Se enseñan los {p.limite} más recientes.</p>
+					{/if}
+				{:else if formato === 'amplio'}
+					<div class="amplio">
+						{#each documentos as d (d.id)}
+							<article class="amplia" class:tipo-borrado={d.tipoDocumental.existe === false} data-testid="tarjeta-amplia" {@attach alAcercarse(d)}>
+								<a class="amplia-cabeza" href={enlace(d.id)} title="Abrir la ficha">
+									<span class="icono-doc {nivelDe(d.confianzaPromedio)}" aria-hidden="true">
+										<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" /><path d="M14 3v5h5" /><path d="M9 13h6M9 17h4" /></svg>
+									</span>
+									<span class="amplia-titulo">
+										<span class="tarjeta-tipo">
+											{d.tipoDocumental.nombre ?? d.tipoDocumental.id}
+											{#if d.tipoDocumental.existe === false}<span class="borrado">ya no existe</span>{/if}
+										</span>
+										<span class="tarjeta-archivo" title={d.archivo}>{d.archivo}</span>
+										<span class="sub">
+											{nombreOrg(d.organizacion)} · {d.extraidoEn ? formatFecha(d.extraidoEn) : '—'}{#if d.paginas}{' '}· {d.paginas} pág.{/if}
+										</span>
+									</span>
+									<span class="amplia-barras">
+										<span class="tarjeta-fila"><span class="sub">Confianza</span>{@render barraConfianza(d.confianzaPromedio, d.confianzaMinima)}</span>
+										<span class="tarjeta-fila"><span class="sub">Campos</span>{@render completitud(d)}</span>
+									</span>
+									<span class="estado {d.estado}" title={d.error ?? ''}>{ETIQUETA_ESTADO[d.estado]}</span>
+									<span class="amplia-ir" aria-hidden="true">
+										<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6" /></svg>
+									</span>
+								</a>
+								<div class="amplia-datos">{@render datosDelDocumento(d)}</div>
+							</article>
 						{/each}
 					</div>
 					{#if p.limite && p.documentos.length >= p.limite}
@@ -666,6 +856,239 @@
 
 	.tarjeta-pie {
 		margin-top: 0.3rem;
+	}
+
+	/* Amplio: una tarjeta a todo lo ancho por documento; arriba lo mismo que el mosaico en un renglón (abre la ficha) y abajo sus datos. */
+	.amplio {
+		display: flex;
+		flex-direction: column;
+		gap: 0.85rem;
+	}
+
+	.amplia {
+		min-width: 0;
+		background: var(--card);
+		border: 1px solid var(--border);
+		border-radius: var(--radius-xl);
+	}
+
+	.amplia.tipo-borrado {
+		background: var(--muted-soft);
+		border-style: dashed;
+	}
+
+	.amplia-cabeza {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.75rem 1.25rem;
+		padding: 0.8rem 1rem;
+		color: var(--foreground);
+		text-decoration: none;
+		border-bottom: 1px solid var(--border);
+		border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+		transition: background 0.12s ease;
+	}
+
+	.amplia-cabeza:hover {
+		background: var(--muted-soft);
+	}
+
+	.amplia-cabeza:hover .amplia-ir {
+		color: var(--primary);
+	}
+
+	.amplia-titulo {
+		display: flex;
+		flex: 1 1 16rem;
+		flex-direction: column;
+		gap: 0.1rem;
+		min-width: 0;
+	}
+
+	.amplia-barras {
+		display: flex;
+		flex-direction: column;
+		gap: 0.25rem;
+		min-width: 13rem;
+	}
+
+	.amplia-ir {
+		display: inline-flex;
+		color: var(--muted-foreground);
+	}
+
+	.amplia-datos {
+		display: flex;
+		flex-direction: column;
+		gap: 0.9rem;
+		padding: 0.9rem 1rem 1rem;
+	}
+
+	.amplio-aviso {
+		margin: 0;
+		font-size: 0.8125rem;
+		color: var(--muted-foreground);
+	}
+
+	.amplio-aviso.mal {
+		color: var(--destructive);
+	}
+
+	.reintentar {
+		margin-left: 0.5rem;
+		padding: 0.1rem 0.55rem;
+		font: inherit;
+		font-size: 0.75rem;
+		color: var(--foreground);
+		background: var(--card);
+		border: 1px solid var(--border);
+		border-radius: var(--radius-md);
+		cursor: pointer;
+	}
+
+	.grupo-datos h3 {
+		margin: 0 0 0.45rem;
+		font-size: 0.75rem;
+		font-weight: 600;
+		color: var(--secondary-foreground);
+	}
+
+	.rejilla-datos {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+		gap: 0.65rem 1.25rem;
+		margin: 0;
+	}
+
+	.dato {
+		min-width: 0;
+	}
+
+	.dato dt {
+		display: flex;
+		align-items: center;
+		gap: 0.35rem;
+		font-size: 0.7rem;
+		color: var(--muted-foreground);
+	}
+
+	.dato-etq {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	/* Un valor largo (el objeto social de un acta) se corta a tres renglones; completo, en su título y en la ficha. */
+	.dato dd {
+		display: -webkit-box;
+		margin: 0.1rem 0 0;
+		overflow: hidden;
+		font-size: 0.8125rem;
+		font-weight: 500;
+		line-height: 1.35;
+		overflow-wrap: anywhere;
+		-webkit-line-clamp: 3;
+		line-clamp: 3;
+		-webkit-box-orient: vertical;
+	}
+
+	.dato-marca {
+		flex-shrink: 0;
+		margin-left: 0.3rem;
+		font-size: 0.65rem;
+		font-weight: 600;
+		border-radius: var(--radius-sm);
+		padding: 0 0.3rem;
+		white-space: nowrap;
+		vertical-align: middle;
+	}
+
+	.dato-marca.media {
+		color: var(--warning);
+		background: var(--warning-soft);
+	}
+
+	.dato-marca.baja {
+		color: var(--destructive);
+		background: var(--destructive-soft);
+	}
+
+	.dato-marca.a-mano {
+		color: var(--primary-strong);
+		background: var(--primary-soft);
+	}
+
+	.tabla-datos-wrap {
+		overflow-x: auto;
+		border: 1px solid var(--border);
+		border-radius: var(--radius-lg);
+	}
+
+	.tabla-datos {
+		width: 100%;
+		border-collapse: collapse;
+		font-size: 0.78rem;
+	}
+
+	.tabla-datos th {
+		text-align: left;
+		font-size: 0.7rem;
+		font-weight: 400;
+		color: var(--muted-foreground);
+		white-space: nowrap;
+		padding: 0.4rem 0.6rem;
+		border-bottom: 1px solid var(--border);
+		background: var(--muted-soft);
+	}
+
+	.tabla-datos td {
+		min-width: 7rem;
+		padding: 0.4rem 0.6rem;
+		vertical-align: top;
+		border-bottom: 1px solid var(--border);
+	}
+
+	.tabla-datos tbody tr:last-child td {
+		border-bottom: none;
+	}
+
+	.tabla-datos .n {
+		min-width: 0;
+		width: 1.5rem;
+		color: var(--muted-foreground);
+		font-variant-numeric: tabular-nums;
+	}
+
+	.celda-valor {
+		font-weight: 500;
+		overflow-wrap: break-word;
+	}
+
+	.faltaron {
+		margin: 0;
+		font-size: 0.75rem;
+		line-height: 1.5;
+		color: var(--muted-foreground);
+	}
+
+	.faltaron span {
+		font-weight: 600;
+		color: var(--secondary-foreground);
+	}
+
+	.ver-mas {
+		padding: 0;
+		font: inherit;
+		font-weight: 500;
+		color: var(--primary);
+		background: none;
+		border: none;
+		cursor: pointer;
+	}
+
+	.ver-mas:hover {
+		text-decoration: underline;
 	}
 
 	.filtros {
