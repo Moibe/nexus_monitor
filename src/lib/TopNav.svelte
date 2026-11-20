@@ -7,7 +7,7 @@
   // llegas a Tablas de prod, no a la pantalla de inicio. Es lo que uno espera
   // al comparar dos ambientes, que es justo para lo que sirve esta barra.
   let ambiente = $derived(esAmbiente(page.params.ambiente) ? page.params.ambiente : AMBIENTE_POR_DEFECTO);
-  let seccionActual = $derived(page.url.pathname.split('/')[2] || 'procesadores');
+  let seccionActual = $derived(page.url.pathname.split('/')[2] || 'datos');
 </script>
 
 <!-- La barra de Biblioratum (`TopBar.svelte`): blanca, pegada arriba, con una línea abajo, 64 px de alto y la marca a la
