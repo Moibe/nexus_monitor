@@ -78,6 +78,18 @@ export type CuentaCreada = {
 	creadoEn: string | null;
 };
 
+/** Una cuenta de organización vista antes de retirarla (`GET /admins-plataforma/cuentas/{guid}`). */
+export type CuentaOrganizacion = {
+	guid: string;
+	email: string;
+	nombre: string;
+	apellidos: string;
+	estado: EstadoAdmin;
+	membresias: { organizacion: { guid: string; nombre: string | null }; rol: string; rolNombre: string }[];
+	/** Las organizaciones de las que es el único administrador activo: se quedarían sin ninguno si se retira. */
+	organizacionesSinAdmin: { guid: string; nombre: string | null }[];
+};
+
 /** Qué pasó con el correo de bienvenida. `omitido` es cuando se pidió no mandarlo. */
 export type CorreoDeBienvenida = 'enviado' | 'sin_canal' | 'fallo' | 'omitido';
 
@@ -164,6 +176,17 @@ export const crearAdmin = (
 
 export const reenviarInvitacion = (ambiente: Ambiente, guid: string) =>
 	llamar<AccesoNuevo>(ambiente, 'POST', `/admins-plataforma/${encodeURIComponent(guid)}/reenviar-invitacion`);
+
+export const verCuenta = (ambiente: Ambiente, guid: string) =>
+	llamar<CuentaOrganizacion>(ambiente, 'GET', `/admins-plataforma/cuentas/${encodeURIComponent(guid)}`);
+
+/** `dejarSinAdmin` confirma lo que el modal advirtió; sin él, nexus_back se niega a dejar una organización sin administrador. */
+export const retirarCuenta = (ambiente: Ambiente, guid: string, motivo: string, dejarSinAdmin: boolean) =>
+	llamar<{ retirado: boolean; email: string; organizacionesSinAdmin: { guid: string; nombre: string | null }[] }>(
+		ambiente,
+		'DELETE',
+		`/admins-plataforma/cuentas/${encodeURIComponent(guid)}?motivo=${encodeURIComponent(motivo)}&dejarSinAdmin=${dejarSinAdmin}`
+	);
 
 export const retirarAdmin = (ambiente: Ambiente, guid: string, motivo: string) =>
 	llamar<{ retirado: boolean; email: string }>(

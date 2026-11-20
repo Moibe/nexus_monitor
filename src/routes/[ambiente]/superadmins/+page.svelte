@@ -9,10 +9,11 @@
 	import { SvelteSet } from 'svelte/reactivity';
 	import { invalidateAll } from '$app/navigation';
 	import type { PageData } from './$types';
-	import type { AccesoNuevo, AdminPlataforma, CuentaCreada } from '$lib/server/nexusBack';
+	import type { AccesoNuevo, AdminPlataforma, CuentaCreada, CuentaOrganizacion } from '$lib/server/nexusBack';
 	import { formatFecha } from '$lib/procesadores';
 	import ModalAcceso from '$lib/ModalAcceso.svelte';
 	import ModalRetirarAdmin from '$lib/ModalRetirarAdmin.svelte';
+	import ModalRetirarCuenta from '$lib/ModalRetirarCuenta.svelte';
 
 	let { data }: { data: PageData } = $props();
 
@@ -115,6 +116,78 @@
 		}
 	}
 
+	// ── Retirar una cuenta de organización (las de abajo, Moibe 2026-11-20) ──
+	//
+	// Al abrir el modal se le pregunta a nexus_back de qué organizaciones es el único administrador activo, para advertirlo en rojo.
+	// Si mientras tanto cambió (alguien retiró al otro administrador), nexus_back se niega con 409 y aquí se vuelve a preguntar: la
+	// advertencia aparece y quien opera decide otra vez.
+	let cuentaARetirar = $state<CuentaCreada | null>(null);
+	let detalleCuenta = $state<CuentaOrganizacion | null>(null);
+	let cargandoCuenta = $state(false);
+	let retirandoCuenta = $state(false);
+	let errorCuenta = $state<string | null>(null);
+
+	const urlCuenta = (guid: string) => `/api/${data.ambiente}/cuentas/${encodeURIComponent(guid)}`;
+
+	async function cargarCuenta(c: CuentaCreada) {
+		cargandoCuenta = true;
+		try {
+			const r = await fetch(urlCuenta(c.guid));
+			if (cuentaARetirar?.guid !== c.guid) return;
+			if (!r.ok) {
+				errorCuenta = await mensajeDe(r, `Error ${r.status} al revisar la cuenta.`);
+				return;
+			}
+			detalleCuenta = (await r.json()) as CuentaOrganizacion;
+		} catch {
+			errorCuenta = 'No se pudo contactar a Monitor.';
+		} finally {
+			cargandoCuenta = false;
+		}
+	}
+
+	function pedirRetirarCuenta(c: CuentaCreada) {
+		cuentaARetirar = c;
+		detalleCuenta = null;
+		errorCuenta = null;
+		cargarCuenta(c);
+	}
+
+	function cancelarRetirarCuenta() {
+		cuentaARetirar = null;
+		detalleCuenta = null;
+		errorCuenta = null;
+	}
+
+	async function confirmarRetirarCuenta(motivo: string, dejarSinAdmin: boolean) {
+		const c = cuentaARetirar;
+		if (!c) return;
+		retirandoCuenta = true;
+		errorCuenta = null;
+		try {
+			const r = await fetch(urlCuenta(c.guid), {
+				method: 'DELETE',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ motivo, dejarSinAdmin })
+			});
+			if (!r.ok) {
+				const mensaje = await mensajeDe(r, `Error ${r.status} al retirar.`);
+				if (r.status === 409) await cargarCuenta(c);
+				errorCuenta = mensaje;
+				return;
+			}
+			cancelarRetirarCuenta();
+			await invalidateAll();
+		} catch {
+			errorCuenta = 'No se pudo contactar a Monitor.';
+		} finally {
+			retirandoCuenta = false;
+		}
+	}
+
+	/** Se retiran desde aquí las cuentas de organización que siguen existiendo; un superadmin creado se retira en su propia fila. */
+	const sePuedeRetirar = (c: CuentaCreada) => c.estado !== 'retirado' && c.rol !== 'ADMIN_PLATAFORMA';
+
 	// ── Refresco automático ─────────────────────────────────────────────────
 	//
 	// Los cambios propios ya se ven solos (cada acción llama a `invalidateAll`).
@@ -130,7 +203,7 @@
 	 *  lista cambiaría debajo de las manos de quien opera, y el modal de accesos
 	 *  enseña una contraseña que solo se ve una vez. */
 	let ocupado = $derived(
-		acceso !== null || aRetirar !== null || creando || retirando || regenerando !== null
+		acceso !== null || aRetirar !== null || cuentaARetirar !== null || creando || retirando || regenerando !== null
 	);
 
 	async function refrescar() {
@@ -343,11 +416,12 @@
 														<th>Organización</th>
 														<th>Estado</th>
 														<th>Creado</th>
+														<th class="col-accion"><span class="sr-only">Acciones</span></th>
 													</tr>
 												</thead>
 												<tbody>
 													{#each a.creados as c (c.guid)}
-														<tr data-testid="cuenta-creada">
+														<tr data-testid="cuenta-creada" data-email={c.email}>
 															<td>{c.nombre ? `${c.nombre} ${c.apellidos ?? ''}` : '—'}</td>
 															<td>{#if c.email}<code class="correo">{c.email}</code>{:else}—{/if}</td>
 															<td>{rolDe(c.rol)}</td>
@@ -356,6 +430,19 @@
 																<span class="estado {c.estado}" title={AYUDA_ESTADO[c.estado]}>{ETIQUETA_ESTADO[c.estado]}</span>
 															</td>
 															<td>{c.creadoEn ? formatFecha(c.creadoEn) : '—'}</td>
+															<td class="col-accion">
+																{#if sePuedeRetirar(c)}
+																	<button
+																		type="button"
+																		class="retirar"
+																		data-testid="retirar-cuenta"
+																		aria-label={`Retirar a ${c.nombre ?? c.email}`}
+																		onclick={() => pedirRetirarCuenta(c)}
+																	>
+																		Retirar
+																	</button>
+																{/if}
+															</td>
 														</tr>
 													{/each}
 												</tbody>
@@ -374,6 +461,16 @@
 	<ModalAcceso titulo={acceso?.titulo ?? ''} acceso={acceso?.datos ?? null} onCerrar={() => (acceso = null)} />
 
 	<ModalRetirarAdmin admin={aRetirar} {retirando} error={errorRetirar} onConfirmar={confirmarRetirar} onCancelar={cancelarRetirar} />
+
+	<ModalRetirarCuenta
+		cuenta={cuentaARetirar}
+		detalle={detalleCuenta}
+		cargando={cargandoCuenta}
+		retirando={retirandoCuenta}
+		error={errorCuenta}
+		onConfirmar={confirmarRetirarCuenta}
+		onCancelar={cancelarRetirarCuenta}
+	/>
 </div>
 
 <style>
