@@ -70,8 +70,19 @@ export type CampoFicha = {
 	corregido: boolean;
 	corregidoEn: string | null;
 	corregidoPor: string | null;
+	/** Su corrección a mano se hizo en esta extracción anterior y pasó a la vigente al reprocesar (nexus_back, NEX-614). */
+	correccionTrasladadaDe?: string | null;
 	/** La corrida de la que sale el dato (la vigente). */
 	corridaId?: string;
+};
+
+/** Una corrección a mano de la extracción anterior que NO pasó a la vigente al reprocesar (NEX-614). `valor` es dato de cliente. */
+export type CorreccionSinTrasladar = {
+	ruta: string;
+	valor: string | null;
+	motivo: 'campo_ausente' | 'fila_distinta' | 'otro_tipo' | string;
+	deExtraccion: string | null;
+	corregidoPor: string | null;
 };
 
 /**
@@ -106,6 +117,7 @@ export type Ficha = {
 	clasificacion: { categoria: string | null; tipoDocumental: TipoRef | null; confianza: number | null; clasificadoEn: string | null } | null;
 	extraccion: { estado: EstadoCorrida; confianzaPromedio: number | null; confianzaMinima: number | null; paginas: number | null } | null;
 	campos: CampoFicha[];
+	correccionesSinTrasladar?: CorreccionSinTrasladar[];
 	corridas: Corrida[];
 	enmascarado?: boolean;
 };

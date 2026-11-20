@@ -43,6 +43,7 @@ export function fichaPara(ambiente: Ambiente, f: Ficha): Ficha {
 			valor: enmascarar(c.valor),
 			valorCrudo: enmascarar(c.valorCrudo),
 			valorExtraido: enmascarar(c.valorExtraido)
-		}))
+		})),
+		correccionesSinTrasladar: (f.correccionesSinTrasladar ?? []).map((s) => ({ ...s, valor: enmascarar(s.valor) }))
 	};
 }
