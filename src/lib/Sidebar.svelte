@@ -45,6 +45,12 @@
       ]
     },
     {
+      // Una lupa: las preguntas en lenguaje natural de cada organización (NEX-609).
+      href: '/busqueda',
+      etiqueta: 'Búsqueda',
+      icono: ['M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14z', 'M21 21l-4.35-4.35']
+    },
+    {
       // Un candado: quién puede entrar a qué.
       href: '/roles',
       etiqueta: 'Roles',

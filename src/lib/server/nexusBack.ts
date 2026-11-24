@@ -1,6 +1,7 @@
 import { configDe } from '$lib/server/ambientes';
 import type { Ambiente } from '$lib/ambientes';
 import type { Ficha, Panorama } from '$lib/datos';
+import type { PanoramaBusqueda } from '$lib/busqueda';
 
 // Monitor NO se conecta a SQL Server: le pregunta a nexus_back, que es quien
 // tiene las credenciales, el driver ODBC y la relación con el DBA. Así esas
@@ -162,6 +163,12 @@ async function llamar<T>(ambiente: Ambiente, metodo: string, ruta: string, cuerp
 // que pasar el resultado por `lib/server/enmascarar.ts` antes de mandarlo al navegador.
 
 export const panoramaDatos = (ambiente: Ambiente) => llamar<Panorama>(ambiente, 'GET', '/monitor-datos/');
+
+// ─── Búsqueda en lenguaje natural (sección «Búsqueda», NEX-609) ─────────────
+// `GET /monitor-busqueda/` de nexus_back: solo llave de servicio y SOLO NÚMEROS por organización (cuántas preguntas, fallas, tiempo, costo).
+// No trae el texto de ninguna pregunta, así que no hay nada que enmascarar en producción.
+export const panoramaBusqueda = (ambiente: Ambiente, dias: number) =>
+	llamar<PanoramaBusqueda>(ambiente, 'GET', `/monitor-busqueda/?dias=${encodeURIComponent(String(dias))}`);
 
 export const fichaDatos = (ambiente: Ambiente, documentoId: string) =>
 	llamar<Ficha>(ambiente, 'GET', `/monitor-datos/${encodeURIComponent(documentoId)}`);

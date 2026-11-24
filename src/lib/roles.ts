@@ -137,8 +137,16 @@ export const CAPACIDADES: Capacidad[] = [
 	},
 	{
 		grupo: 'pantallas',
+		nombre: 'Búsqueda: preguntar en lenguaje natural y ver la respuesta como tabla',
+		detalle: 'Con «¿Te sirvió?» y las preguntas recientes de cada quien. Solo lee, como los expedientes (NEX-607, NEX-609).',
+		quienes: 'todos',
+		estado: 'abierto',
+		decide: 'back: aislamiento.exigir'
+	},
+	{
+		grupo: 'pantallas',
 		nombre: 'Módulo de uso (engrane)',
-		detalle: 'Lleva al centro operativo documental y a los expedientes.',
+		detalle: 'Lleva al centro operativo documental, a los expedientes y a la búsqueda.',
 		quienes: 'todos',
 		estado: 'decision',
 		decide: 'front: permisos.ts → puedeUsar'
@@ -258,6 +266,14 @@ export const CAPACIDADES: Capacidad[] = [
 		quienes: 'administran',
 		estado: 'propuesta',
 		decide: 'back: roles.PUEDEN_ADMINISTRAR'
+	},
+	{
+		grupo: 'acciones',
+		nombre: 'Aprobar, descartar y quitar ejemplos de la búsqueda',
+		detalle: 'Las respuestas marcadas como útiles, en Búsqueda › Ejemplos de tu organización. Un ejemplo solo lo usa su organización (NEX-609).',
+		quienes: 'administran',
+		estado: 'diseno',
+		decide: 'back: aislamiento.exigir_administrar · front: guardia-de-rutas.ts'
 	},
 	{
 		grupo: 'acciones',
