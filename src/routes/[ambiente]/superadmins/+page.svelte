@@ -9,9 +9,10 @@
 	import { SvelteSet } from 'svelte/reactivity';
 	import { invalidateAll } from '$app/navigation';
 	import type { PageData } from './$types';
-	import type { AccesoNuevo, AdminPlataforma, CuentaCreada, CuentaOrganizacion } from '$lib/server/nexusBack';
+	import type { AccesoAMostrar, AdminPlataforma, CuentaCreada, CuentaOrganizacion } from '$lib/server/nexusBack';
 	import { formatFecha } from '$lib/procesadores';
 	import ModalAcceso from '$lib/ModalAcceso.svelte';
+	import ModalRestablecer from '$lib/ModalRestablecer.svelte';
 	import ModalRetirarAdmin from '$lib/ModalRetirarAdmin.svelte';
 	import ModalRetirarCuenta from '$lib/ModalRetirarCuenta.svelte';
 
@@ -25,7 +26,7 @@
 	let errorCrear = $state<string | null>(null);
 
 	/** Lo que se le enseña a quien opera una sola vez: los accesos de la cuenta que se acaba de crear o regenerar. */
-	let acceso = $state<{ titulo: string; datos: AccesoNuevo } | null>(null);
+	let acceso = $state<{ titulo: string; datos: AccesoAMostrar } | null>(null);
 
 	let errorFila = $state<string | null>(null);
 	let regenerando = $state<string | null>(null);
@@ -53,7 +54,7 @@
 				errorCrear = await mensajeDe(r, `Error ${r.status} al crear el superadmin.`);
 				return;
 			}
-			acceso = { titulo: 'Superadmin creado', datos: (await r.json()) as AccesoNuevo };
+			acceso = { titulo: 'Superadmin creado', datos: (await r.json()) as AccesoAMostrar };
 			nombre = '';
 			apellidos = '';
 			email = '';
@@ -74,7 +75,7 @@
 				errorFila = await mensajeDe(r, `Error ${r.status} al regenerar la contraseña.`);
 				return;
 			}
-			acceso = { titulo: 'Contraseña nueva', datos: (await r.json()) as AccesoNuevo };
+			acceso = { titulo: 'Contraseña nueva', datos: (await r.json()) as AccesoAMostrar };
 			await invalidateAll();
 		} catch {
 			errorFila = 'No se pudo contactar a Monitor.';
@@ -188,6 +189,55 @@
 	/** Se retiran desde aquí las cuentas de organización que siguen existiendo; un superadmin creado se retira en su propia fila. */
 	const sePuedeRetirar = (c: CuentaCreada) => c.estado !== 'retirado' && c.rol !== 'ADMIN_PLATAFORMA';
 
+	// ── Restablecer la contraseña de quien la olvidó (Moibe, 2026-11-26) ──
+	//
+	// Verla no se puede (nexus_back guarda un hash): se reemplaza por una temporal, que se enseña UNA vez en el modal de accesos. Sirve
+	// para un superadmin que ya entró (al pendiente le basta «Regenerar contraseña», que además manda el correo) y para las cuentas de
+	// organización de abajo, hayan entrado o no.
+	type PorRestablecer = { guid: string; cuenta: boolean; nombre: string | null; apellidos: string | null; email: string };
+	let aRestablecer = $state<PorRestablecer | null>(null);
+	let restableciendo = $state(false);
+	let errorRestablecer = $state<string | null>(null);
+
+	function pedirRestablecer(p: PorRestablecer) {
+		aRestablecer = p;
+		errorRestablecer = null;
+	}
+
+	function cancelarRestablecer() {
+		aRestablecer = null;
+		errorRestablecer = null;
+	}
+
+	async function confirmarRestablecer() {
+		const p = aRestablecer;
+		if (!p) return;
+		restableciendo = true;
+		errorRestablecer = null;
+		try {
+			const base = p.cuenta ? 'cuentas' : 'superadmins';
+			const r = await fetch(`/api/${data.ambiente}/${base}/${encodeURIComponent(p.guid)}/restablecer`, { method: 'POST' });
+			if (!r.ok) {
+				errorRestablecer = await mensajeDe(r, `Error ${r.status} al restablecer la contraseña.`);
+				return;
+			}
+			const d = (await r.json()) as { email: string; contrasenaTemporal: string };
+			aRestablecer = null;
+			acceso = {
+				titulo: 'Contraseña restablecida',
+				datos: { administrador: { nombre: p.nombre, apellidos: p.apellidos, email: d.email }, correo: 'no_se_manda', contrasenaTemporal: d.contrasenaTemporal }
+			};
+			await invalidateAll();
+		} catch {
+			errorRestablecer = 'No se pudo contactar a Monitor.';
+		} finally {
+			restableciendo = false;
+		}
+	}
+
+	/** Las cuentas de organización que se pueden restablecer: las que siguen existiendo y pueden entrar. */
+	const sePuedeRestablecer = (c: CuentaCreada) => sePuedeRetirar(c) && c.estado !== 'inactivo' && !!c.email;
+
 	// ── Refresco automático ─────────────────────────────────────────────────
 	//
 	// Los cambios propios ya se ven solos (cada acción llama a `invalidateAll`).
@@ -203,7 +253,7 @@
 	 *  lista cambiaría debajo de las manos de quien opera, y el modal de accesos
 	 *  enseña una contraseña que solo se ve una vez. */
 	let ocupado = $derived(
-		acceso !== null || aRetirar !== null || cuentaARetirar !== null || creando || retirando || regenerando !== null
+		acceso !== null || aRetirar !== null || cuentaARetirar !== null || aRestablecer !== null || creando || retirando || regenerando !== null
 	);
 
 	async function refrescar() {
@@ -386,6 +436,16 @@
 										>
 											{regenerando === a.guid ? 'Regenerando…' : 'Regenerar contraseña'}
 										</button>
+									{:else if a.estado === 'activo'}
+										<button
+											type="button"
+											class="regenerar"
+											data-testid="restablecer-superadmin"
+											title="La que tiene no se puede ver: se reemplaza por una temporal que verás una vez."
+											onclick={() => pedirRestablecer({ guid: a.guid, cuenta: false, nombre: a.nombre, apellidos: a.apellidos, email: a.email })}
+										>
+											Restablecer contraseña
+										</button>
 									{/if}
 									<button
 										type="button"
@@ -431,6 +491,17 @@
 															</td>
 															<td>{c.creadoEn ? formatFecha(c.creadoEn) : '—'}</td>
 															<td class="col-accion">
+																{#if sePuedeRestablecer(c)}
+																	<button
+																		type="button"
+																		class="regenerar"
+																		data-testid="restablecer-cuenta"
+																		title="La que tiene no se puede ver: se reemplaza por una temporal que verás una vez."
+																		onclick={() => pedirRestablecer({ guid: c.guid, cuenta: true, nombre: c.nombre, apellidos: c.apellidos, email: c.email ?? '' })}
+																	>
+																		Restablecer contraseña
+																	</button>
+																{/if}
 																{#if sePuedeRetirar(c)}
 																	<button
 																		type="button"
@@ -459,6 +530,14 @@
 	{/if}
 
 	<ModalAcceso titulo={acceso?.titulo ?? ''} acceso={acceso?.datos ?? null} onCerrar={() => (acceso = null)} />
+
+	<ModalRestablecer
+		persona={aRestablecer}
+		{restableciendo}
+		error={errorRestablecer}
+		onConfirmar={confirmarRestablecer}
+		onCancelar={cancelarRestablecer}
+	/>
 
 	<ModalRetirarAdmin admin={aRetirar} {retirando} error={errorRetirar} onConfirmar={confirmarRetirar} onCancelar={cancelarRetirar} />
 

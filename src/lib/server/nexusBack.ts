@@ -101,6 +101,13 @@ export type AccesoNuevo = {
 	contrasenaTemporal: string;
 };
 
+/** Lo que enseña el modal de accesos: el de crear o regenerar, o el de restablecer (que nunca manda correo: `no_se_manda`). */
+export type AccesoAMostrar = {
+	administrador: { nombre: string | null; apellidos: string | null; email: string };
+	correo: CorreoDeBienvenida | 'no_se_manda';
+	contrasenaTemporal: string;
+};
+
 /** Lo que nexus_back contestó cuando algo salió mal: su código HTTP, el texto (ya en español, hecho para mostrarse) y, si lo trae, un código. */
 export class ErrorNexusBack extends Error {
 	status: number;
@@ -183,6 +190,17 @@ export const crearAdmin = (
 
 export const reenviarInvitacion = (ambiente: Ambiente, guid: string) =>
 	llamar<AccesoNuevo>(ambiente, 'POST', `/admins-plataforma/${encodeURIComponent(guid)}/reenviar-invitacion`);
+
+/**
+ * Para quien olvidó su contraseña (Moibe, 2026-11-26): verla no se puede (nexus_back guarda un hash), así que se reemplaza por una
+ * temporal, aunque la cuenta ya haya hecho su primer acceso. `cuenta` es una de organización; si no, un superadmin.
+ */
+export const restablecerContrasena = (ambiente: Ambiente, guid: string, cuenta: boolean) =>
+	llamar<{ email: string; contrasenaTemporal: string }>(
+		ambiente,
+		'POST',
+		`/admins-plataforma/${cuenta ? 'cuentas/' : ''}${encodeURIComponent(guid)}/restablecer-contrasena`
+	);
 
 export const verCuenta = (ambiente: Ambiente, guid: string) =>
 	llamar<CuentaOrganizacion>(ambiente, 'GET', `/admins-plataforma/cuentas/${encodeURIComponent(guid)}`);

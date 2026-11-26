@@ -4,7 +4,7 @@
 	// verla: por eso NO se cierra con Escape ni con un clic fuera, solo con el botón. Es el respaldo de quien opera: si el correo no
 	// salió, esta pantalla es la única forma de que la persona entre.
 	import { copiarTexto } from '$lib/copiar';
-	import type { AccesoNuevo, CorreoDeBienvenida } from '$lib/server/nexusBack';
+	import type { AccesoAMostrar } from '$lib/server/nexusBack';
 
 	let {
 		titulo,
@@ -12,7 +12,7 @@
 		onCerrar
 	}: {
 		titulo: string;
-		acceso: AccesoNuevo | null;
+		acceso: AccesoAMostrar | null;
 		onCerrar: () => void;
 	} = $props();
 
@@ -31,11 +31,12 @@
 	}
 
 	// Lo que pasó con el correo, dicho con todas sus letras: «no salió» es lo que el operador tiene que saber para entregar la contraseña.
-	const AVISO_DE_CORREO: Record<CorreoDeBienvenida, { texto: string; bueno: boolean }> = {
+	const AVISO_DE_CORREO: Record<AccesoAMostrar['correo'], { texto: string; bueno: boolean }> = {
 		enviado: { texto: 'Se le mandó un correo de bienvenida con estos mismos accesos.', bueno: true },
 		sin_canal: { texto: 'El correo NO se mandó: este ambiente no manda correo de verdad. Entrégale tú la contraseña.', bueno: false },
 		fallo: { texto: 'NO SE PUDO mandar el correo (el motivo está en el log de nexus_back). Entrégale tú la contraseña.', bueno: false },
-		omitido: { texto: 'No se mandó correo porque pediste no mandarlo. Entrégale tú la contraseña.', bueno: false }
+		omitido: { texto: 'No se mandó correo porque pediste no mandarlo. Entrégale tú la contraseña.', bueno: false },
+		no_se_manda: { texto: 'Al restablecer no se manda correo. Entrégale tú la contraseña (o úsala tú, si la cuenta es tuya).', bueno: false }
 	};
 </script>
 
@@ -45,7 +46,9 @@
 			<h2 id="titulo-acceso">{titulo}</h2>
 
 			<p class="persona">
-				<strong>{acceso.administrador.nombre} {acceso.administrador.apellidos}</strong>
+				{#if acceso.administrador.nombre}
+					<strong>{acceso.administrador.nombre} {acceso.administrador.apellidos ?? ''}</strong>
+				{/if}
 				<code data-testid="acceso-correo-usuario">{acceso.administrador.email}</code>
 			</p>
 
