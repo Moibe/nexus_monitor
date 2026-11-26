@@ -441,10 +441,11 @@
 											type="button"
 											class="regenerar"
 											data-testid="restablecer-superadmin"
-											title="La que tiene no se puede ver: se reemplaza por una temporal que verás una vez."
+											title="Restablecer su contraseña: la que tiene no se puede ver, se reemplaza por una temporal que verás una vez."
+											aria-label={`Restablecer la contraseña de ${a.nombre} ${a.apellidos}`}
 											onclick={() => pedirRestablecer({ guid: a.guid, cuenta: false, nombre: a.nombre, apellidos: a.apellidos, email: a.email })}
 										>
-											Restablecer contraseña
+											Restablecer
 										</button>
 									{/if}
 									<button
@@ -496,10 +497,11 @@
 																		type="button"
 																		class="regenerar"
 																		data-testid="restablecer-cuenta"
-																		title="La que tiene no se puede ver: se reemplaza por una temporal que verás una vez."
+																		title="Restablecer su contraseña: la que tiene no se puede ver, se reemplaza por una temporal que verás una vez."
+																		aria-label={`Restablecer la contraseña de ${c.nombre ?? c.email}`}
 																		onclick={() => pedirRestablecer({ guid: c.guid, cuenta: true, nombre: c.nombre, apellidos: c.apellidos, email: c.email ?? '' })}
 																	>
-																		Restablecer contraseña
+																		Restablecer
 																	</button>
 																{/if}
 																{#if sePuedeRetirar(c)}
